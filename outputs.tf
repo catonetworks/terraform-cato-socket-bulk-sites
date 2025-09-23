@@ -164,6 +164,12 @@ output "lan_interfaces_by_id" {
   value = local.lan_interfaces_by_id
 }
 
+# Debug output removed - LAG member interfaces are now working correctly
+# output "debug_sites_data" {
+#   description = "Raw sites data for debugging LAG member interfaces"
+#   value = local.sites_data
+# }
+
 # # Site Configuration for External Use
 # output "site_configurations" {
 #   description = "Site configurations formatted for external consumption"

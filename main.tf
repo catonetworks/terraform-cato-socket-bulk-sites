@@ -33,6 +33,26 @@ locals {
     )
   } : {}
   
+  # Validation for Routed network ranges - they should not have DHCP configuration fields with values
+  routed_dhcp_validation_errors = flatten([
+    for site_name, network_ranges in local.site_network_ranges_data : [
+      for idx, nr in network_ranges : 
+      "Site '${site_name}': Routed network range '${try(nr.network_range_name, "Unnamed")}' (${try(nr.subnet, "No subnet")}) cannot have DHCP configuration fields (dhcp_ip_range, dhcp_relay_group_id, dhcp_relay_group_name, dhcp_microsegmentation) set to non-empty/non-false values. For Routed ranges, only dhcp_type can be empty, DHCP_DISABLED, or ACCOUNT_DEFAULT."
+      if try(nr.range_type, "") == "Routed" && (
+        (try(nr.dhcp_ip_range, null) != null && try(nr.dhcp_ip_range, "") != "") ||
+        (try(nr.dhcp_relay_group_id, null) != null && try(nr.dhcp_relay_group_id, "") != "") ||
+        (try(nr.dhcp_relay_group_name, null) != null && try(nr.dhcp_relay_group_name, "") != "") ||
+        (try(nr.dhcp_microsegmentation, null) != null && try(nr.dhcp_microsegmentation, null) != false && try(lower(tostring(nr.dhcp_microsegmentation)), "false") == "true")
+      )
+    ]
+  ])
+
+  # Use regex to force an error if there are validation issues
+  routed_validation_check = length(local.routed_dhcp_validation_errors) > 0 ? regex(
+    "ValidationError", 
+    join("\n", concat(["VALIDATION ERROR:"], local.routed_dhcp_validation_errors, ["Please fix these configuration errors before proceeding."]))
+  ) : "validation_passed"
+  
   csv_sites_data = try(local.using_csv ? [
     for site_name, site_rows in local.csv_sites_grouped : {
       name = site_name
@@ -57,7 +77,7 @@ locals {
           downstream_bandwidth = try(tonumber(row.wan_downstream_bw), 0)
           role = row.wan_role
           precedence = row.wan_precedence
-        } if row.wan_interface_id != "" && row.wan_interface_id != null
+        } if row.wan_interface_index != "" && row.wan_interface_index != null && row.wan_interface_name != "" && row.wan_interface_name != null
       ]
       
       # Native range from CSV
@@ -74,6 +94,8 @@ locals {
         range_type = try(trimspace(site_rows[0].native_range_type), "Direct")
         translated_subnet = try(trimspace(site_rows[0].native_range_translated_subnet), null)
         mdns_reflector = try(lower(trimspace(site_rows[0].native_range_mdns_reflector)), "false") == "true"
+        interface_dest_type = try(trimspace(site_rows[0].native_range_interface_dest_type), null)
+        lag_min_links = try(tonumber(trimspace(site_rows[0].native_range_interface_lag_min_links)), null)
         dhcp_settings = {
           dhcp_type = try(trimspace(site_rows[0].native_range_dhcp_type), "DHCP_DISABLED")
           ip_range = try(trimspace(site_rows[0].native_range_dhcp_ip_range), null) != "" ? try(trimspace(site_rows[0].native_range_dhcp_ip_range), null) : null
@@ -155,9 +177,12 @@ locals {
                 )
               ]
             )
-          } if lan_id != "unknown" && lan_id != "" && length([
-            for nr in lan_ranges : nr if try(nr.subnet, "") != ""  # Only require subnet for valid network range
-          ]) > 0 # Create LAN interface if it has at least one valid network range (including native ranges)
+          } if lan_id != "unknown" && lan_id != "" && (
+            length([
+              for nr in lan_ranges : nr if try(nr.subnet, "") != ""  # Only require subnet for valid network range
+            ]) > 0 || # Create LAN interface if it has at least one valid network range (including native ranges)
+            try(lan_ranges[0].lan_interface_dest_type, "") == "LAN_LAG_MEMBER" # OR if it's a LAG member (no subnet required)
+          )
         ],
         # Virtual LAN interfaces for network ranges with explicit interface index but no interface ID
         # These are ranges that specify a lan_interface_index but have empty lan_interface_id
@@ -168,7 +193,10 @@ locals {
             try(nr.lan_interface_index, "") => nr... if (
               try(nr.lan_interface_id, "") == "" &&  # No explicit interface ID
               try(nr.lan_interface_index, "") != "" &&  # But has interface index
-              try(nr.subnet, "") != "" &&  # Valid network range (subnet is required)
+              (
+                try(nr.subnet, "") != "" ||  # Valid network range (subnet is required) OR
+                try(nr.lan_interface_dest_type, "") == "LAN_LAG_MEMBER"  # LAG member (no subnet required)
+              ) &&
               try(nr.lan_interface_index, try(site_rows[0].native_range_interface_index, "")) != try(site_rows[0].native_range_interface_index, "") &&  # Not native interface
               try(lower(nr.is_native_range), "false") != "true" &&  # Exclude native ranges
               # Ensure this interface index doesn't already have an explicit LAN interface
@@ -186,7 +214,11 @@ locals {
                  (try(lower(trimspace(nr.is_native_range)), "false") == "true" || try(trimspace(nr.lan_interface_dest_type), "") == "LAN_LAG_MEMBER")
             ][0], "LAN Interface ${interface_index}")
             index = interface_index
-            dest_type = "LAN"
+            dest_type = try([
+              for nr in local.site_network_ranges_data[site_name] : nr.lan_interface_dest_type
+              if try(trimspace(nr.lan_interface_index), "") == interface_index &&
+                 try(trimspace(nr.lan_interface_dest_type), "") != ""
+            ][0], "LAN")
             default_lan = false
             network_ranges = [
               for nr in ranges : {
@@ -212,7 +244,14 @@ locals {
                 try(lower(nr.is_native_range), "false") != "true"  # Exclude native ranges
               )
             ]
-          } if length(ranges) > 0
+          } if length(ranges) > 0 || (
+            # Create interface for LAG members even without network ranges
+            length([
+              for nr in local.site_network_ranges_data[site_name] : nr
+              if try(trimspace(nr.lan_interface_index), "") == interface_index &&
+                 try(trimspace(nr.lan_interface_dest_type), "") == "LAN_LAG_MEMBER"
+            ]) > 0
+          )
         ],
         # Default interfaces with network ranges (those without explicit lan_interface_id but with network ranges)
         # Check if there are any network ranges for default interfaces
@@ -329,7 +368,8 @@ module "socket-site" {
       name              = try(lan.default_lan, false) ? each.value.native_range.interface_name : lan.name
       interface_index   = try(lan.default_lan, false) ? (can(tonumber(each.value.native_range.index)) ? "INT_${each.value.native_range.index}" : each.value.native_range.index) : (can(tonumber(lan.index)) ? "INT_${lan.index}" : lan.index)
       # For default_lan interfaces (native range), omit dest_type so socket module won't create the LAN interface
-      # For regular interfaces, include dest_type so socket module will create the LAN interface  
+      # For regular interfaces, include dest_type so socket module will create the LAN interface
+      # For LAG members, pass the dest_type so socket module can create LAG member resources
       dest_type         = try(lan.default_lan, false) ? null : lan.dest_type
       subnet            = try(lan.default_lan, false) ? each.value.native_range.subnet : (
         # For regular LAN interfaces, find the subnet from the native range
@@ -459,6 +499,11 @@ module "socket-site" {
     relay_group_id = each.value.native_range.dhcp_settings.relay_group_id != "" ? each.value.native_range.dhcp_settings.relay_group_id : null
     dhcp_microsegmentation = each.value.native_range.dhcp_settings.dhcp_microsegmentation
   }
+  
+  # Native range interface configuration
+  interface_dest_type = each.value.native_range.interface_dest_type
+  lag_min_links = each.value.native_range.lag_min_links
+  interface_name = each.value.native_range.interface_name
   
   # Network ranges for the default/native LAN interface
   # Extract from default_lan interfaces that have network ranges
