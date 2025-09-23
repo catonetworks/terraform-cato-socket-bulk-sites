@@ -33,7 +33,7 @@ locals {
     )
   } : {}
   
-  csv_sites_data = local.using_csv ? [
+  csv_sites_data = try(local.using_csv ? [
     for site_name, site_rows in local.csv_sites_grouped : {
       name = site_name
       description = try(site_rows[0].site_description, "")
@@ -62,24 +62,24 @@ locals {
       
       # Native range from CSV
       native_range = {
-        subnet = try(site_rows[0].native_range_subnet, "")
-        local_ip = try(site_rows[0].native_range_local_ip, null)
-        interface_name = try(site_rows[0].native_range_interface_name, "")
-        interface_id = try(site_rows[0].native_range_interface_id, "") # Now populated from CSV
-        index = try(site_rows[0].native_range_interface_index, "1")
-        range_name = try(site_rows[0].native_range_name, "Native Range")
-        range_id = try(site_rows[0].native_range_id, "")
-        vlan = try(tonumber(site_rows[0].native_range_vlan), null) != 0 ? try(tonumber(site_rows[0].native_range_vlan), null) : null
-        gateway = try(site_rows[0].native_range_gateway, null)
-        range_type = try(site_rows[0].native_range_type, "Direct")
-        translated_subnet = try(site_rows[0].native_range_translated_subnet, null)
-        mdns_reflector = try(lower(site_rows[0].native_range_mdns_reflector), "false") == "true"
+        subnet = try(trimspace(site_rows[0].native_range_subnet), "")
+        local_ip = try(trimspace(site_rows[0].native_range_local_ip), null)
+        interface_name = try(trimspace(site_rows[0].native_range_interface_name), "")
+        interface_id = try(trimspace(site_rows[0].native_range_interface_id), "") # Now populated from CSV
+        index = try(trimspace(site_rows[0].native_range_interface_index), "1")
+        range_name = try(trimspace(site_rows[0].native_range_name), "Native Range")
+        range_id = try(trimspace(site_rows[0].native_range_id), "")
+        vlan = try(tonumber(trimspace(site_rows[0].native_range_vlan)), null) != 0 ? try(tonumber(trimspace(site_rows[0].native_range_vlan)), null) : null
+        gateway = try(trimspace(site_rows[0].native_range_gateway), null)
+        range_type = try(trimspace(site_rows[0].native_range_type), "Direct")
+        translated_subnet = try(trimspace(site_rows[0].native_range_translated_subnet), null)
+        mdns_reflector = try(lower(trimspace(site_rows[0].native_range_mdns_reflector)), "false") == "true"
         dhcp_settings = {
-          dhcp_type = try(site_rows[0].native_range_dhcp_type, "DHCP_DISABLED")
-          ip_range = try(site_rows[0].native_range_dhcp_ip_range, null)
-          relay_group_id = try(site_rows[0].native_range_dhcp_relay_group_id, null)
-          relay_group_name = try(site_rows[0].native_range_dhcp_relay_group_name, null)
-          dhcp_microsegmentation = try(lower(site_rows[0].native_range_dhcp_microsegmentation), "false") == "true"
+          dhcp_type = try(trimspace(site_rows[0].native_range_dhcp_type), "DHCP_DISABLED")
+          ip_range = try(trimspace(site_rows[0].native_range_dhcp_ip_range), null) != "" ? try(trimspace(site_rows[0].native_range_dhcp_ip_range), null) : null
+          relay_group_id = try(trimspace(site_rows[0].native_range_dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(site_rows[0].native_range_dhcp_relay_group_id), "") != "" ? try(trimspace(site_rows[0].native_range_dhcp_relay_group_id), null) : null
+          relay_group_name = try(trimspace(site_rows[0].native_range_dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(site_rows[0].native_range_dhcp_relay_group_name), "") != "" ? try(trimspace(site_rows[0].native_range_dhcp_relay_group_name), null) : null
+          dhcp_microsegmentation = try(lower(trimspace(site_rows[0].native_range_dhcp_microsegmentation)), "false") == "true"
         }
       }
       
@@ -115,11 +115,11 @@ locals {
                   local_ip = try(nr.local_ip, null)
                   native_range = try(lower(nr.is_native_range), "false") == "true"
                   dhcp_settings = {
-                    dhcp_type = try(nr.dhcp_type, "DHCP_DISABLED")
-                    ip_range = try(nr.dhcp_ip_range, null)
-                    relay_group_id = try(nr.dhcp_relay_group_id, null)
-                    relay_group_name = try(nr.dhcp_relay_group_name, null)
-                    dhcp_microsegmentation = try(lower(nr.dhcp_microsegmentation), "false") == "true"
+                    dhcp_type = try(trimspace(nr.dhcp_type), "DHCP_DISABLED")
+                    ip_range = try(trimspace(nr.dhcp_ip_range), null) != "" ? try(trimspace(nr.dhcp_ip_range), null) : null
+                    relay_group_id = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_id), "") != "" ? try(trimspace(nr.dhcp_relay_group_id), null) : null
+                    relay_group_name = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_name), "") != "" ? try(trimspace(nr.dhcp_relay_group_name), null) : null
+                    dhcp_microsegmentation = try(lower(trimspace(nr.dhcp_microsegmentation)), "false") == "true"
                   }
                 } if (
                   try(nr.subnet, "") != "" &&  # Only include rows with actual network range data (subnet is required)
@@ -140,11 +140,11 @@ locals {
                   local_ip = try(nr.local_ip, null)
                   native_range = try(lower(nr.is_native_range), "false") == "true"
                   dhcp_settings = {
-                    dhcp_type = try(nr.dhcp_type, "DHCP_DISABLED")
-                    ip_range = try(nr.dhcp_ip_range, null)
-                    relay_group_id = try(nr.dhcp_relay_group_id, null)
-                    relay_group_name = try(nr.dhcp_relay_group_name, null)
-                    dhcp_microsegmentation = try(lower(nr.dhcp_microsegmentation), "false") == "true"
+                    dhcp_type = try(trimspace(nr.dhcp_type), "DHCP_DISABLED")
+                    ip_range = try(trimspace(nr.dhcp_ip_range), null) != "" ? try(trimspace(nr.dhcp_ip_range), null) : null
+                    relay_group_id = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_id), "") != "" ? try(trimspace(nr.dhcp_relay_group_id), null) : null
+                    relay_group_name = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_name), "") != "" ? try(trimspace(nr.dhcp_relay_group_name), null) : null
+                    dhcp_microsegmentation = try(lower(trimspace(nr.dhcp_microsegmentation)), "false") == "true"
                   }
                 } if (
                   try(nr.lan_interface_id, "") == "" &&  # No explicit lan_interface_id
@@ -179,7 +179,12 @@ locals {
             )
           } : {
             id = null  # Virtual interface - no actual interface ID
-            name = try(ranges[0].lan_interface_name, "LAN Interface ${interface_index}")
+            name = try([
+              for nr in local.site_network_ranges_data[site_name] : trimspace(nr.lan_interface_name)
+              if try(trimspace(nr.lan_interface_index), "") == interface_index && 
+                 try(trimspace(nr.lan_interface_name), "") != "" &&
+                 (try(lower(trimspace(nr.is_native_range)), "false") == "true" || try(trimspace(nr.lan_interface_dest_type), "") == "LAN_LAG_MEMBER")
+            ][0], "LAN Interface ${interface_index}")
             index = interface_index
             dest_type = "LAN"
             default_lan = false
@@ -196,11 +201,11 @@ locals {
                 local_ip = try(nr.local_ip, null)
                 native_range = try(lower(nr.is_native_range), "false") == "true"
                 dhcp_settings = {
-                  dhcp_type = try(nr.dhcp_type, "DHCP_DISABLED")
-                  ip_range = try(nr.dhcp_ip_range, null)
-                  relay_group_id = try(nr.dhcp_relay_group_id, null)
-                  relay_group_name = try(nr.dhcp_relay_group_name, null)
-                  dhcp_microsegmentation = try(lower(nr.dhcp_microsegmentation), "false") == "true"
+                  dhcp_type = try(trimspace(nr.dhcp_type), "DHCP_DISABLED")
+                  ip_range = try(trimspace(nr.dhcp_ip_range), null) != "" ? try(trimspace(nr.dhcp_ip_range), null) : null
+                  relay_group_id = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_id), "") != "" ? try(trimspace(nr.dhcp_relay_group_id), null) : null
+                  relay_group_name = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_name), "") != "" ? try(trimspace(nr.dhcp_relay_group_name), null) : null
+                  dhcp_microsegmentation = try(lower(trimspace(nr.dhcp_microsegmentation)), "false") == "true"
                 }
               } if (
                 try(nr.subnet, "") != "" &&  # Only include rows with actual network range data (subnet is required)
@@ -238,11 +243,11 @@ locals {
               local_ip = try(nr.local_ip, null)
               native_range = try(lower(nr.is_native_range), "false") == "true"
               dhcp_settings = {
-                dhcp_type = try(nr.dhcp_type, "DHCP_DISABLED")
-                ip_range = try(nr.dhcp_ip_range, null)
-                relay_group_id = try(nr.dhcp_relay_group_id, null)
-                relay_group_name = try(nr.dhcp_relay_group_name, null)
-                dhcp_microsegmentation = try(lower(nr.dhcp_microsegmentation), "false") == "true"
+                dhcp_type = try(trimspace(nr.dhcp_type), "DHCP_DISABLED")
+                ip_range = try(trimspace(nr.dhcp_ip_range), null) != "" ? try(trimspace(nr.dhcp_ip_range), null) : null
+                relay_group_id = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_id), "") != "" ? try(trimspace(nr.dhcp_relay_group_id), null) : null
+                relay_group_name = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_name), "") != "" ? try(trimspace(nr.dhcp_relay_group_name), null) : null
+                dhcp_microsegmentation = try(lower(trimspace(nr.dhcp_microsegmentation)), "false") == "true"
               }
             } if (
               try(nr.lan_interface_id, "") == "" &&
@@ -254,7 +259,7 @@ locals {
         }] : []
       ) : []
     }
-  ] : []
+  ] : [], [])
   
   # Combine JSON and CSV data (only one will have data)
   sites_data = concat(local.json_sites_data, local.csv_sites_data)
@@ -284,7 +289,7 @@ locals {
 
 module "socket-site" {
   for_each = { for site in local.sites_data : site.name => site }
-  source   = "catonetworks/socket/cato"
+  source   = "../terraform-cato-socket"
   
   # Basic site information
   site_name        = each.value.name
@@ -330,15 +335,31 @@ module "socket-site" {
         # For regular LAN interfaces, find the subnet from the native range
         # First check if using CSV data
         local.using_csv && contains(keys(local.site_network_ranges_data), each.key) ? (
-          length([
-            for nr in local.site_network_ranges_data[each.key] : nr
-            if try(nr.lan_interface_id, "") == lan.id && try(lower(nr.is_native_range), "false") == "true"
-          ]) > 0 ? [
-            for nr in local.site_network_ranges_data[each.key] : try(nr.subnet, "")
-            if try(nr.lan_interface_id, "") == lan.id && try(lower(nr.is_native_range), "false") == "true"
-          ][0] : (
-            # Fallback to first non-native range if no native range found
-            length(lan.network_ranges) > 0 ? lan.network_ranges[0].subnet : ""
+          # For virtual interfaces (lan.id == null), match by interface_index; for regular interfaces, match by interface_id
+          lan.id == null ? (
+            # Virtual interface - match by interface_index
+            length([
+              for nr in local.site_network_ranges_data[each.key] : nr
+              if try(trimspace(nr.lan_interface_index), "") == lan.index && try(lower(trimspace(nr.is_native_range)), "false") == "true"
+            ]) > 0 ? [
+              for nr in local.site_network_ranges_data[each.key] : try(trimspace(nr.subnet), "")
+              if try(trimspace(nr.lan_interface_index), "") == lan.index && try(lower(trimspace(nr.is_native_range)), "false") == "true"
+            ][0] : (
+              # Fallback to first non-native range if no native range found
+              length(lan.network_ranges) > 0 ? lan.network_ranges[0].subnet : ""
+            )
+          ) : (
+            # Regular interface - match by interface_id
+            length([
+              for nr in local.site_network_ranges_data[each.key] : nr
+              if try(trimspace(nr.lan_interface_id), "") == lan.id && try(lower(trimspace(nr.is_native_range)), "false") == "true"
+            ]) > 0 ? [
+              for nr in local.site_network_ranges_data[each.key] : try(trimspace(nr.subnet), "")
+              if try(trimspace(nr.lan_interface_id), "") == lan.id && try(lower(trimspace(nr.is_native_range)), "false") == "true"
+            ][0] : (
+              # Fallback to first non-native range if no native range found
+              length(lan.network_ranges) > 0 ? lan.network_ranges[0].subnet : ""
+            )
           )
         ) : (
           # For JSON data, look for native range in the LAN interface's network_ranges
@@ -358,15 +379,31 @@ module "socket-site" {
         # For regular LAN interfaces, find the local_ip from the native range
         # First check if using CSV data
         local.using_csv && contains(keys(local.site_network_ranges_data), each.key) ? (
-          length([
-            for nr in local.site_network_ranges_data[each.key] : nr
-            if try(nr.lan_interface_id, "") == lan.id && try(lower(nr.is_native_range), "false") == "true"
-          ]) > 0 ? [
-            for nr in local.site_network_ranges_data[each.key] : try(nr.local_ip, null)
-            if try(nr.lan_interface_id, "") == lan.id && try(lower(nr.is_native_range), "false") == "true"
-          ][0] : (
-            # Fallback to first non-native range if no native range found
-            length(lan.network_ranges) > 0 ? lan.network_ranges[0].local_ip : null
+          # For virtual interfaces (lan.id == null), match by interface_index; for regular interfaces, match by interface_id
+          lan.id == null ? (
+            # Virtual interface - match by interface_index
+            length([
+              for nr in local.site_network_ranges_data[each.key] : nr
+              if try(trimspace(nr.lan_interface_index), "") == lan.index && try(lower(trimspace(nr.is_native_range)), "false") == "true"
+            ]) > 0 ? [
+              for nr in local.site_network_ranges_data[each.key] : try(trimspace(nr.local_ip), null)
+              if try(trimspace(nr.lan_interface_index), "") == lan.index && try(lower(trimspace(nr.is_native_range)), "false") == "true"
+            ][0] : (
+              # Fallback to first non-native range if no native range found
+              length(lan.network_ranges) > 0 ? lan.network_ranges[0].local_ip : null
+            )
+          ) : (
+            # Regular interface - match by interface_id
+            length([
+              for nr in local.site_network_ranges_data[each.key] : nr
+              if try(trimspace(nr.lan_interface_id), "") == lan.id && try(lower(trimspace(nr.is_native_range)), "false") == "true"
+            ]) > 0 ? [
+              for nr in local.site_network_ranges_data[each.key] : try(trimspace(nr.local_ip), null)
+              if try(trimspace(nr.lan_interface_id), "") == lan.id && try(lower(trimspace(nr.is_native_range)), "false") == "true"
+            ][0] : (
+              # Fallback to first non-native range if no native range found
+              length(lan.network_ranges) > 0 ? lan.network_ranges[0].local_ip : null
+            )
           )
         ) : (
           # For JSON data, look for native range in the LAN interface's network_ranges

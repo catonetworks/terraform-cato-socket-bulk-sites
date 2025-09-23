@@ -2,6 +2,23 @@
 
 This Terraform module allows you to provision multiple Cato socket sites from either CSV or JSON data files. It's designed to work seamlessly with the Cato CLI tool for exporting existing configurations and importing them as Terraform resources.
 
+## Missing fields in API/catocli export 
+min_links
+    nr_dhcp_type = nr_helper_fields.get('XXXXX', "DHCP_DISABLED")
+                nr_ip_range = nr_helper_fields.get('XXXXX', None)
+                # nr_relay_group_id = nr_helper_fields.get('XXXXX', None)
+                nr_relay_group_name = nr_helper_fields.get('XXXXX', None)
+                nr_gateway = nr_helper_fields.get('XXXXX', None)
+                nr_translated_subnet = nr_helper_fields.get('XXXXX', None)
+                # nr_internet_only = nr_helper_fields.get('XXXXX', None)
+                nr_local_ip = nr_helper_fields.get('XXXXX', None)
+                nr_range_type = nr_helper_fields.get('XXXXX', None)
+                # Adding logic to pre-populate with default value
+                if nr_vlan!=None:
+                    nr_range_type="VLAN"
+                else:
+                    nr_range_type="Direct"
+
 ## Prerequisites
 
 ### Installing Cato CLI
