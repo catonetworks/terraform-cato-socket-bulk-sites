@@ -501,8 +501,8 @@ module "socket-site" {
   }
   
   # Native range interface configuration
-  interface_dest_type = each.value.native_range.interface_dest_type
-  lag_min_links = each.value.native_range.lag_min_links
+  interface_dest_type = try(each.value.native_range.interface_dest_type, each.value.native_range.dest_type)
+  lag_min_links = try(tonumber(each.value.native_range.lag_min_links), each.value.native_range.lag_min_links)
   interface_name = each.value.native_range.interface_name
   
   # Network ranges for the default/native LAN interface
