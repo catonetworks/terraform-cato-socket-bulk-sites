@@ -1,33 +1,55 @@
-# Terraform Cato Socket Bulk Sites
+# Cato Networks Socket Bulk Sites Terraform Module
 
-This Terraform module allows you to provision multiple Cato socket sites from either CSV or JSON data files. It's designed to work seamlessly with the Cato CLI tool for exporting existing configurations and importing them as Terraform resources.
+[![Terraform Registry](https://img.shields.io/badge/terraform-registry-623CE4.svg)](https://registry.terraform.io/modules/catonetworks/socket-bulk-sites/cato/latest)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Terraform Version](https://img.shields.io/badge/terraform-%3E%3D1.5-623CE4.svg)](https://terraform.io)
 
-## Missing fields in API/catocli export 
-min_links
-    nr_dhcp_type = nr_helper_fields.get('XXXXX', "DHCP_DISABLED")
-                nr_ip_range = nr_helper_fields.get('XXXXX', None)
-                # nr_relay_group_id = nr_helper_fields.get('XXXXX', None)
-                nr_relay_group_name = nr_helper_fields.get('XXXXX', None)
-                nr_gateway = nr_helper_fields.get('XXXXX', None)
-                nr_translated_subnet = nr_helper_fields.get('XXXXX', None)
-                # nr_internet_only = nr_helper_fields.get('XXXXX', None)
-                nr_local_ip = nr_helper_fields.get('XXXXX', None)
-                nr_range_type = nr_helper_fields.get('XXXXX', None)
-                # Adding logic to pre-populate with default value
-                if nr_vlan!=None:
-                    nr_range_type="VLAN"
-                else:
-                    nr_range_type="Direct"
+Terraform module for bulk deployment of Cato Networks socket sites from CSV or JSON data files. This module simplifies the process of managing multiple socket sites and their configurations as code.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+  - [Creating Sites from CSV](#creating-sites-from-csv)
+  - [Creating Sites from JSON](#creating-sites-from-json)
+- [Brownfield Deployments](#brownfield-deployments)
+- [Important Notes & Limitations](#important-notes--limitations)
+- [Troubleshooting](#troubleshooting)
+- [Version Compatibility](#version-compatibility)
+- [Requirements](#requirements)
+- [Inputs](#inputs)
+- [Outputs](#outputs)
+
+## Overview
+
+This Terraform module provides a streamlined way to provision and manage multiple Cato socket sites at scale. It supports two input formats:
+
+1. **CSV-based Configuration**: Using a main CSV file for sites and individual CSV files for network ranges
+2. **JSON-based Configuration**: Using a single JSON file containing all site and network range information
+
+The module is designed to work seamlessly with the Cato CLI tool for exporting existing configurations and importing them as Terraform resources, enabling infrastructure-as-code management for your entire Cato Networks deployment.
+
+### Features
+
+- **Bulk Deployment**: Provision multiple sites simultaneously using a single configuration
+- **Brownfield Support**: Import existing Cato socket site configurations for Terraform management
+- **Format Flexibility**: Support for both CSV and JSON input formats
+- **Network Range Management**: Comprehensive configuration of all network range settings
+- **Integration with Cato CLI**: Simplified export and import workflows
 
 ## Prerequisites
 
+Before using this module, ensure you have:
+
+- **Terraform**: Version >= 1.5.0 installed
+- **CatoCLI**: Version >= 3.0.2 installed
+- **Cato Account**: Commercial Cato Networks account with API access
+- **Required Permissions**:
+  - Cato: API token with Edit permissions
+
 ### Installing Cato CLI
-
-The Cato CLI (`catocli`) is required to export existing socket site configurations and generate the data files needed by this module.
-
-#### Installation
-
-Install the Cato CLI using pip:
 
 ```bash
 pip install catocli
@@ -35,110 +57,220 @@ pip install catocli
 
 **Note**: Ensure you have Python 3.6 or later installed on your system.
 
-### Configuring Cato CLI Credentials
+### Configuring the CatoCLI
 
 Before using the CLI, you need to configure your Cato API credentials:
 
 1. **Create API Key**: Log into your Cato Management Application and generate an API key with appropriate permissions
-2. **Configure credentials** using one of these methods:
+2. **Configure credentials** using one of the following methods:
 
    ```bash
+   # Interactive configuration
    catocli configure
+   
+   # Direct configuration (default profile)
+   catocli configure set --cato-token YOUR_API_TOKEN --account-id YOUR_ACCOUNT_ID
+   
+   # Direct configuration using a specific profile
+   catocli configure set --profile my-profile --cato-token YOUR_API_TOKEN --account-id YOUR_ACCOUNT_ID
+   
+   # Setting the API endpoint (for region specific CMA urls)
+   catocli configure set --endpoint https://api.catonetworks.com/api/v1/graphql2 --cato-token YOUR_API_TOKEN --account-id YOUR_ACCOUNT_ID
    ```
-   Follow the prompts to enter your API token and account ID.
 
-## Usage Workflow
+## Quick Start
 
-This module supports two main workflows for bulk site provisioning:
+1. **Export your existing Cato socket sites**:
+   ```bash
+   # Export to CSV
+   catocli export socket_sites -f csv --output-directory=config_data_csv
+   
+   # Or export to JSON
+   catocli export socket_sites -f json --output-directory=config_data
+   ```
 
-### Workflow 1: CSV-based Configuration
+2. **Create a Terraform configuration file**:
+   ```hcl
+   # For CSV data
+   module "sites_from_csv" {
+     source = "catonetworks/socket-bulk-sites/cato"
+     
+     sites_csv_file_path = "config_data_csv/socket_sites.csv"
+     sites_csv_network_ranges_folder_path = "config_data_csv/sites_config/"
+   }
+   
+   # For JSON data
+   module "sites_from_json" {
+     source = "catonetworks/socket-bulk-sites/cato"
+     
+     sites_json_file_path = "config_data/socket_sites.json"
+   }
+   ```
 
-1. **Export existing socket sites to CSV format:**
+3. **Deploy your socket sites**:
+   ```bash
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+## Usage
+
+### Creating Sites from CSV
+
+The CSV-based approach uses:
+- A main CSV file containing socket site configurations
+- Individual CSV files for each site's network ranges
+
+#### Template Files
+The module includes template CSV files to help you get started:
+- [Sample socket_sites.csv](https://github.com/catonetworks/terraform-cato-socket-bulk-sites/blob/main/templates/socket_sites.csv)
+- [Sample network_ranges.csv](https://github.com/catonetworks/terraform-cato-socket-bulk-sites/blob/main/templates/Test_network_ranges.csv)
+
+#### Example Workflow
+
+1. **Export existing sites to CSV format**:
    ```bash
    catocli export socket_sites -f csv --output-directory=config_data_csv
    ```
-   This creates CSV files containing your existing socket site configurations.
 
-2. **Import and generate Terraform configuration:**
+2. **Import the configuration into Terraform**:
    ```bash
-   catocli import socket_sites_to_tf --data-type csv --csv-file config_data_csv/socket_sites_11362.csv --csv-folder config_data_csv/sites_config_11362/ --module-name module.sites_from_csv --auto-approve
+   catocli import socket_sites_to_tf --data-type csv --csv-file config_data_csv/socket_sites.csv --csv-folder config_data_csv/sites_config/ --module-name module.sites_from_csv --auto-approve
    ```
-   
-   This command:
-   - Reads the CSV file containing site data
-   - Processes individual site network range CSV files from the specified folder
-   - Generates Terraform configuration using the specified module name
-   - Automatically approves the import process
 
-### Workflow 2: JSON-based Configuration
+3. **Configure the module in your Terraform file**:
+   ```hcl
+   module "sites_from_csv" {
+     source = "catonetworks/socket-bulk-sites/cato"
+     
+     sites_csv_file_path = "config_data_csv/socket_sites.csv"
+     sites_csv_network_ranges_folder_path = "config_data_csv/sites_config/"
+   }
+   ```
 
-1. **Export existing socket sites to JSON format:**
+### Creating Sites from JSON
+
+The JSON-based approach uses a single file containing all site and network range information.
+
+#### Template Files
+The module includes a sample JSON file to help you get started:
+- [Sample socket_sites.json](https://github.com/catonetworks/terraform-cato-socket-bulk-sites/blob/main/templates/socket_sites.json)
+
+#### Example Workflow
+
+1. **Export existing sites to JSON format**:
    ```bash
    catocli export socket_sites -f json --output-directory=config_data
    ```
-   This creates a JSON file containing your existing socket site configurations.
 
-2. **Import and generate Terraform configuration:**
+2. **Import the configuration into Terraform**:
    ```bash
-   catocli import socket_sites_to_tf --data-type json --json-file config_data/socket_sites_11362.json --module-name module.sites_from_json
+   catocli import socket_sites_to_tf --data-type json --json-file config_data/socket_sites.json --module-name module.sites_from_json
    ```
-   
-   This command:
-   - Reads the JSON file containing site data
-   - Generates Terraform configuration using the specified module name
 
-## Module Usage
+3. **Configure the module in your Terraform file**:
+   ```hcl
+   module "sites_from_json" {
+     source = "catonetworks/socket-bulk-sites/cato"
+     
+     sites_json_file_path = "config_data/socket_sites.json"
+   }
+   ```
 
-After running the import commands above, you can use this module in your Terraform configuration:
+## Brownfield Deployments
 
-### Using CSV Data
-```hcl
-module "sites_from_csv" {
-  source = "catonetworks/socket-bulk-sites/cato"
-  
-  sites_csv_file_path = "config_data_csv/socket_sites_11362.csv"
-  sites_csv_network_ranges_folder_path = "config_data_csv/sites_config_11362/"
-}
+This module is particularly valuable for brownfield deployments where you need to bring existing Cato Networks infrastructure under Terraform management. The workflow for managing existing sites:
+
+1. **Export your current configuration** from the Cato Management Application to CSV or JSON using the `catocli export` command.
+
+2. **Import the configuration into Terraform** using the `catocli import socket_sites_to_tf` command, which creates the necessary Terraform configuration files.
+
+3. **Make incremental changes** to your infrastructure by modifying the imported configuration files and applying the changes with Terraform.
+
+This approach enables you to:
+- Manage existing sites as code
+- Bulk update configurations across multiple sites
+- Add new network ranges to existing sites
+- Track configuration changes in version control
+- Enforce consistency across your infrastructure
+
+### Examples
+
+#### CSV Export and Import
+```bash
+# Export existing sites to CSV
+catocli export socket_sites -f csv --output-directory=config_data_csv
+
+# Import into Terraform
+catocli import socket_sites_to_tf --data-type csv --csv-file config_data_csv/socket_sites.csv --csv-folder config_data_csv/sites_config/ --module-name module.sites_from_csv --auto-approve
 ```
 
-### Using JSON Data
-```hcl
-module "sites_from_json" {
-  source = "catonetworks/socket-bulk-sites/cato"
-  
-  sites_json_file_path = "config_data/socket_sites_11362.json"
-}
+#### JSON Export and Import
+```bash
+# Export existing sites to JSON
+catocli export socket_sites -f json --output-directory=config_data
+
+# Import into Terraform
+catocli import socket_sites_to_tf --data-type json --json-file config_data/socket_sites.json --module-name module.sites_from_json
 ```
 
-## File Structure
+## Important Notes & Limitations
 
-### CSV Format
-When using CSV format, the export creates:
-- Main CSV file: `socket_sites_{account_id}.csv` - Contains site configuration data
-- Individual CSV files: `{site_name}_network_ranges.csv` - Contains network ranges for each site
+### CSV File Structure
+- The main CSV file must include columns for all site attributes
+- Network range CSV files must be named `{site_name}_network_ranges.csv`
+- Ensure all required fields are populated according to the templates
 
-### JSON Format
-When using JSON format, the export creates:
-- Single JSON file: `socket_sites_{account_id}.json` - Contains all site configuration data including network ranges
+### JSON Structure
+- The JSON file must follow the structure shown in the template
+- All site attributes should be properly nested as per the template
 
-## Next Steps
+### DHCP Configuration
+- DHCP settings should be specified within the network range configuration
+- Supported DHCP types include: `DHCP_DISABLED`, `DHCP_SERVER`, and `DHCP_RELAY`
+- When using DHCP relay, ensure `relay_group_id` or `relay_group_name` is specified
 
-After configuring the module:
+### LAG (Link Aggregation) Configuration
+- For LAG member interfaces, use `LAN_LAG_MEMBER` for the `lan_interface_dest_type`
+- LAG member interfaces do not require subnet configuration
+- Ensure the LAG master interface is properly configured
 
-1. **Initialize Terraform:**
-   ```bash
-   terraform init
-   ```
+## Troubleshooting
 
-2. **Plan the deployment:**
-   ```bash
-   terraform plan
-   ```
+### Common Issues
 
-3. **Apply the configuration:**
-   ```bash
-   terraform apply
-   ```
+**Missing Network Range Files:**
+- Ensure each site has a corresponding network range file named `{site_name}_network_ranges.csv` when using CSV format
+- Verify the path to the network ranges folder is correct
+
+**Import Failures:**
+- Check that the CSV or JSON files follow the expected format and structure
+- Ensure all required fields are properly populated
+- Verify that your Cato API token has the necessary permissions
+
+**DHCP Configuration Issues:**
+- Ensure DHCP settings are correctly specified in the network range configuration
+- Verify that relay group names or IDs exist in your Cato account
+
+### Debug Commands
+
+```bash
+# Test API connectivity
+catocli ping
+
+# Validate configuration
+catocli configure show
+
+# Show available commands
+catocli -h
+```
+
+## Version Compatibility
+
+| Module Version | Terraform | Cato Provider | CatoCLI |
+|----------------|-----------|---------------|----------|
+| 0.1.0+         | >= 1.5.0  | >= 0.0.43     | >= 3.0.2 |
 
 ---
 
