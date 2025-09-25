@@ -10,15 +10,29 @@ Terraform module for bulk deployment of Cato Networks socket sites from CSV or J
 
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
+- [Usage - Bulk Site Provisioning](#usage---bulk-site-provisioning)
+  - [Sample CSV Template File](#sample-csv-template-file)
+  - [Sample JSON Template File](#sample-json-template-file)
+- [Brownfield Deployments](#brownfield-deployments)
+  - [Installing Cato CLI](#installing-cato-cli)
+  - [Configuring the CatoCLI](#configuring-the-catocli)
+  - [Quick Start](#quick-start)
   - [Creating Sites from CSV](#creating-sites-from-csv)
   - [Creating Sites from JSON](#creating-sites-from-json)
-- [Brownfield Deployments](#brownfield-deployments)
+  - [Examples](#examples)
 - [Important Notes & Limitations](#important-notes--limitations)
+  - [Missing Fields from API in Export](#missing-fields-from-api-in-export)
+  - [CSV File Structure](#csv-file-structure)
+  - [JSON Structure](#json-structure)
+  - [DHCP Configuration](#dhcp-configuration)
+  - [LAG (Link Aggregation) Configuration](#lag-link-aggregation-configuration)
 - [Troubleshooting](#troubleshooting)
+  - [Common Issues](#common-issues)
+  - [Debug Commands](#debug-commands)
 - [Version Compatibility](#version-compatibility)
 - [Requirements](#requirements)
+- [Modules](#modules)
+- [Resources](#resources)
 - [Inputs](#inputs)
 - [Outputs](#outputs)
 
@@ -275,7 +289,7 @@ catocli import socket_sites_to_tf --data-type json --json-file config_data/socke
 
 ## Important Notes & Limitations
 
-### Missing Field from API in Export
+### Missing Fields from API in Export
 - The folliwing fields are missing in the read operations from the API and are not currently included in the export.  After exporting, you will need to populate these fields with the desired values before applying changes. 
     1. lag_min_links
     1. dhcp_type
@@ -350,7 +364,8 @@ catocli -h
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >=0.0.43 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.45 |
 
 ## Providers
 
@@ -360,7 +375,7 @@ No providers.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_socket-site"></a> [socket-site](#module\_socket-site) | ../terraform-cato-socket | n/a |
+| <a name="module_socket-site"></a> [socket-site](#module\_socket-site) | catonetworks/socket/cato | n/a |
 
 ## Resources
 
