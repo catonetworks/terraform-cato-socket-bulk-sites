@@ -83,7 +83,7 @@ locals {
       # Native range from CSV
       native_range = {
         subnet = try(trimspace(site_rows[0].native_range_subnet), "")
-        local_ip = try(trimspace(site_rows[0].native_range_local_ip), null)
+        local_ip = try(trimspace(site_rows[0].native_range_local_ip), null) != "" ? try(trimspace(site_rows[0].native_range_local_ip), null) : null
         interface_name = try(trimspace(site_rows[0].native_range_interface_name), "")
         interface_id = try(trimspace(site_rows[0].native_range_interface_id), "") # Now populated from CSV
         index = try(trimspace(site_rows[0].native_range_interface_index), "1")
