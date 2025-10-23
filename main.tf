@@ -59,6 +59,8 @@ locals {
       description = try(site_rows[0].site_description, "")
       type = try(site_rows[0].site_type, "")
       connection_type = try(site_rows[0].connection_type, "")
+      license_id = try(trimspace(site_rows[0].license_id), null) != "" ? try(trimspace(site_rows[0].license_id), null) : null
+      license_bw = try(trimspace(site_rows[0].license_bw), null) != "" ? try(trimspace(site_rows[0].license_bw), null) : null
       
       site_location = {
         address = try(site_rows[0].site_location_address, null) != "" ? try(site_rows[0].site_location_address, null) : "No address provided"
@@ -526,4 +528,8 @@ module "socket-site" {
       } if try(nr.native_range, false) == false # Exclude native ranges
     ] if try(lan.default_lan, false) == true # Only from default LAN interfaces
   ])
+  
+  # License configuration
+  license_id = try(each.value.license_id, null)
+  license_bw = try(each.value.license_bw, null)
 }

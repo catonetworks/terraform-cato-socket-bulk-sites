@@ -18,3 +18,6 @@
 
 ## 0.0.4 (2025-10-23)
 - Incrementing TF version to 1.13 and provider to 0.0.47 to address comples csv parsing string mapping required in newer versions
+
+## 0.0.5 (2025-10-23)
+- Added license resource to module
