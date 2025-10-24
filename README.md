@@ -303,7 +303,10 @@ catocli import socket_sites_to_tf --data-type json --json-file config_data/socke
 
 ### CSV File Structure
 - The main CSV file must include columns for all site attributes
-- Network range CSV files must be named `{site_name}_network_ranges.csv`
+- Network range CSV files must be named `{site_name}_network_ranges.csv` by default
+  - **Optional**: You can override the network ranges CSV filename by adding a `network_ranges_csv_filename` column to the socket_sites.csv file
+  - When specified, this column allows you to use custom filenames for the network ranges CSV (e.g., `custom_ranges.csv`, `site1_lan.csv`)
+  - If this column is empty or not present, the module will fall back to the default naming pattern
 - Ensure all required fields are populated according to the templates
 
 ### JSON Structure
@@ -326,7 +329,7 @@ catocli import socket_sites_to_tf --data-type json --json-file config_data/socke
 ### Common Issues
 
 **Missing Network Range Files:**
-- Ensure each site has a corresponding network range file named `{site_name}_network_ranges.csv` when using CSV format
+- Ensure each site has a corresponding network range file named `{site_name}_network_ranges.csv` when using CSV format (or the custom filename specified in the `network_ranges_csv_filename` column)
 - Verify the path to the network ranges folder is correct
 
 **Import Failures:**
@@ -364,8 +367,8 @@ catocli -h
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.45 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.13 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.47 |
 
 ## Providers
 
@@ -386,7 +389,7 @@ No resources.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_sites_csv_file_path"></a> [sites\_csv\_file\_path](#input\_sites\_csv\_file\_path) | Path to the main CSV file containing the site configuration data. Either this or sites\_json\_file\_path must be provided. | `string` | `null` | no |
-| <a name="input_sites_csv_network_ranges_folder_path"></a> [sites\_csv\_network\_ranges\_folder\_path](#input\_sites\_csv\_network\_ranges\_folder\_path) | Path to the folder containing individual CSV files with network ranges data for each site. Optional when using CSV input. Files should be named {site\_name}\_network\_ranges.csv | `string` | `null` | no |
+| <a name="input_sites_csv_network_ranges_folder_path"></a> [sites\_csv\_network\_ranges\_folder\_path](#input\_sites\_csv\_network\_ranges\_folder\_path) | Path to the folder containing individual CSV files with network ranges data for each site. Optional when using CSV input. Files should be named {site\_name}\_network\_ranges.csv by default, or you can specify a custom filename in the network\_ranges\_csv\_filename column of socket\_sites.csv | `string` | `null` | no |
 | <a name="input_sites_json_file_path"></a> [sites\_json\_file\_path](#input\_sites\_json\_file\_path) | Path to the JSON file containing the site configuration data. Either this or sites\_csv\_file\_path must be provided. | `string` | `null` | no |
 
 ## Outputs

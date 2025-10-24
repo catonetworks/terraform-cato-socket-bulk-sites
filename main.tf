@@ -22,14 +22,23 @@ locals {
   } : {}
   
   # Read network ranges CSV files for each site when using CSV input
+  # Check for custom network_ranges_csv_filename column in socket_sites.csv
+  # If specified, use that filename; otherwise, fall back to default pattern
   site_network_ranges_data = local.using_csv && var.sites_csv_network_ranges_folder_path != null ? {
     for site_name, site_rows in local.csv_sites_grouped :
     site_name => try(
-      csvdecode(file("${var.sites_csv_network_ranges_folder_path}/${replace(site_name, " ", "")}_network_ranges.csv")), 
-      try(
-        csvdecode(file("${var.sites_csv_network_ranges_folder_path}/${site_name}_network_ranges.csv")), 
-        []
-      )
+      # First, check if custom network_ranges_csv_filename column exists and has a value
+      can(site_rows[0].network_ranges_csv_filename) && try(trimspace(site_rows[0].network_ranges_csv_filename), "") != "" ? 
+        csvdecode(file("${var.sites_csv_network_ranges_folder_path}/${trimspace(site_rows[0].network_ranges_csv_filename)}")) :
+        # Fall back to default naming patterns
+        try(
+          csvdecode(file("${var.sites_csv_network_ranges_folder_path}/${replace(site_name, " ", "")}_network_ranges.csv")), 
+          try(
+            csvdecode(file("${var.sites_csv_network_ranges_folder_path}/${site_name}_network_ranges.csv")), 
+            []
+          )
+        ),
+      []
     )
   } : {}
   

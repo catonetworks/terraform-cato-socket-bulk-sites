@@ -22,5 +22,6 @@
 ## 0.0.5 (2025-10-23)
 - Added license resource to module
 
-## 0.0.6 (2025-10-23)
+## 0.0.7 (2025-10-23)
 - Fix for DHCP_RELAY group name from csv
+- Added override for site network ranges csv per site

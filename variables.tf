@@ -21,5 +21,5 @@ variable "sites_csv_file_path" {
 variable "sites_csv_network_ranges_folder_path" {
   type        = string
   default     = null
-  description = "Path to the folder containing individual CSV files with network ranges data for each site. Optional when using CSV input. Files should be named {site_name}_network_ranges.csv"
+  description = "Path to the folder containing individual CSV files with network ranges data for each site. Optional when using CSV input. Files should be named {site_name}_network_ranges.csv by default, or you can specify a custom filename in the network_ranges_csv_filename column of socket_sites.csv"
 }
