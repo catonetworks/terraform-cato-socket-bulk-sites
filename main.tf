@@ -499,6 +499,7 @@ module "socket-site" {
     dhcp_type = each.value.native_range.dhcp_settings.dhcp_type != "" ? each.value.native_range.dhcp_settings.dhcp_type : "DHCP_DISABLED"
     ip_range = each.value.native_range.dhcp_settings.ip_range != "" ? each.value.native_range.dhcp_settings.ip_range : null
     relay_group_id = each.value.native_range.dhcp_settings.relay_group_id != "" ? each.value.native_range.dhcp_settings.relay_group_id : null
+    relay_group_name = each.value.native_range.dhcp_settings.relay_group_name != "" ? each.value.native_range.dhcp_settings.relay_group_name : null
     dhcp_microsegmentation = each.value.native_range.dhcp_settings.dhcp_microsegmentation
   }
   
