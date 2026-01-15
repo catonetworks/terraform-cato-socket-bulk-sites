@@ -381,8 +381,8 @@ module "socket-site" {
   for_each = { for site in local.sites_data :
     try(site.id, null) != null && try(site.id, null) != "" ? site.id : site.name => site
   }
-  source   = "../terraform-cato-socket"
-  # source   = "catonetworks/socket/cato"
+  source   = "catonetworks/socket/cato"
+  # source   = "../terraform-cato-socket"
   
   # Basic site information
   site_name        = each.value.name

@@ -25,3 +25,6 @@
 ## 0.0.7 (2025-10-23)
 - Fix for DHCP_RELAY group name from csv
 - Added override for site network ranges csv per site
+
+## 0.0.8 (2026-01-15)
+- Updated json logic to reflect csv logic to properly detect and ignore changes in source data, and  align to new export format to index resources by id and handle empty values
