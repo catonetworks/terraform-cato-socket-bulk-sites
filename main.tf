@@ -428,16 +428,16 @@ module "socket-site" {
       dest_type         = try(lan.default_lan, false) ? null : lan.dest_type
       subnet            = try(lan.default_lan, false) ? each.value.native_range.subnet : (
         # For regular LAN interfaces, find the subnet from the native range
-        # First check if using CSV data
-        local.using_csv && contains(keys(local.site_network_ranges_data), each.key) ? (
+        # First check if using CSV data (lookup by site name, not site ID)
+        local.using_csv && contains(keys(local.site_network_ranges_data), each.value.name) ? (
           # For virtual interfaces (lan.id == null), match by interface_index; for regular interfaces, match by interface_id
           lan.id == null ? (
             # Virtual interface - match by interface_index
             length([
-              for nr in local.site_network_ranges_data[each.key] : nr
+              for nr in local.site_network_ranges_data[each.value.name] : nr
               if try(trimspace(nr.lan_interface_index), "") == lan.index && try(lower(trimspace(nr.is_native_range)), "false") == "true"
             ]) > 0 ? [
-              for nr in local.site_network_ranges_data[each.key] : try(trimspace(nr.subnet), "")
+              for nr in local.site_network_ranges_data[each.value.name] : try(trimspace(nr.subnet), "")
               if try(trimspace(nr.lan_interface_index), "") == lan.index && try(lower(trimspace(nr.is_native_range)), "false") == "true"
             ][0] : (
               # Fallback to first non-native range if no native range found
@@ -446,10 +446,10 @@ module "socket-site" {
           ) : (
             # Regular interface - match by interface_id
             length([
-              for nr in local.site_network_ranges_data[each.key] : nr
+              for nr in local.site_network_ranges_data[each.value.name] : nr
               if try(trimspace(nr.lan_interface_id), "") == lan.id && try(lower(trimspace(nr.is_native_range)), "false") == "true"
             ]) > 0 ? [
-              for nr in local.site_network_ranges_data[each.key] : try(trimspace(nr.subnet), "")
+              for nr in local.site_network_ranges_data[each.value.name] : try(trimspace(nr.subnet), "")
               if try(trimspace(nr.lan_interface_id), "") == lan.id && try(lower(trimspace(nr.is_native_range)), "false") == "true"
             ][0] : (
               # Fallback to first non-native range if no native range found
@@ -478,10 +478,10 @@ module "socket-site" {
           lan.id == null ? (
             # Virtual interface - match by interface_index
             length([
-              for nr in local.site_network_ranges_data[each.key] : nr
+              for nr in local.site_network_ranges_data[each.value.name] : nr
               if try(trimspace(nr.lan_interface_index), "") == lan.index && try(lower(trimspace(nr.is_native_range)), "false") == "true"
             ]) > 0 ? [
-              for nr in local.site_network_ranges_data[each.key] : try(trimspace(nr.local_ip), "") != "" ? try(trimspace(nr.local_ip), null) : null
+              for nr in local.site_network_ranges_data[each.value.name] : try(trimspace(nr.local_ip), "") != "" ? try(trimspace(nr.local_ip), null) : null
               if try(trimspace(nr.lan_interface_index), "") == lan.index && try(lower(trimspace(nr.is_native_range)), "false") == "true"
             ][0] : (
               # Fallback to first non-native range if no native range found
@@ -490,10 +490,10 @@ module "socket-site" {
           ) : (
             # Regular interface - match by interface_id
             length([
-              for nr in local.site_network_ranges_data[each.key] : nr
+              for nr in local.site_network_ranges_data[each.value.name] : nr
               if try(trimspace(nr.lan_interface_id), "") == lan.id && try(lower(trimspace(nr.is_native_range)), "false") == "true"
             ]) > 0 ? [
-              for nr in local.site_network_ranges_data[each.key] : try(trimspace(nr.local_ip), "") != "" ? try(trimspace(nr.local_ip), null) : null
+              for nr in local.site_network_ranges_data[each.value.name] : try(trimspace(nr.local_ip), "") != "" ? try(trimspace(nr.local_ip), null) : null
               if try(trimspace(nr.lan_interface_id), "") == lan.id && try(lower(trimspace(nr.is_native_range)), "false") == "true"
             ][0] : (
               # Fallback to first non-native range if no native range found
