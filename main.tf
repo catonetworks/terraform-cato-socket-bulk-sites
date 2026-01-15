@@ -354,11 +354,11 @@ locals {
     for item in flatten([
       for site in local.sites_data : [
         for lan in try(site.lan_interfaces, []) : {
-          key = "${site.name}-${lan.index}-${lan.name}"
+          key = "${site.name}-${try(lan.index, "")}-${try(lan.name, "")}"
           lan = lan
-        }
+        } if can(lan.index) && can(lan.name)
       ]
-    ]) : item.key => item.lan if can(item.lan.index) || can(item.lan.name)
+    ]) : item.key => item.lan
   }
   
   # Collect all network ranges from all sites and LAN interfaces
@@ -472,8 +472,8 @@ module "socket-site" {
       )
       local_ip          = try(lan.default_lan, false) ? each.value.native_range.local_ip : (
         # For regular LAN interfaces, find the local_ip from the native range
-        # First check if using CSV data
-        local.using_csv && contains(keys(local.site_network_ranges_data), each.key) ? (
+        # First check if using CSV data (lookup by site name, not site ID)
+        local.using_csv && contains(keys(local.site_network_ranges_data), each.value.name) ? (
           # For virtual interfaces (lan.id == null), match by interface_index; for regular interfaces, match by interface_id
           lan.id == null ? (
             # Virtual interface - match by interface_index
@@ -562,7 +562,7 @@ module "socket-site" {
   
   # Native range interface configuration
   interface_dest_type = try(each.value.native_range.interface_dest_type, each.value.native_range.dest_type)
-  lag_min_links = try(tonumber(each.value.native_range.lag_min_links), each.value.native_range.lag_min_links)
+  lag_min_links = try(each.value.native_range.lag_min_links, null) != null && try(trimspace(each.value.native_range.lag_min_links), "") != "" ? try(tonumber(each.value.native_range.lag_min_links), null) : null
   interface_name = each.value.native_range.interface_name
   
   # Network ranges for the default/native LAN interface
