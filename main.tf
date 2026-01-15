@@ -420,13 +420,13 @@ module "socket-site" {
     for lan in try(each.value.lan_interfaces, []) : merge({
       # For default_lan interfaces, use native_range info; otherwise use lan interface info
       id                = try(lan.default_lan, false) ? null : lan.id  # Pass interface ID for keying
-      name              = try(lan.default_lan, false) ? each.value.native_range.interface_name : lan.name
-      interface_index   = try(lan.default_lan, false) ? (can(tonumber(each.value.native_range.index)) ? "INT_${each.value.native_range.index}" : each.value.native_range.index) : (can(tonumber(lan.index)) ? "INT_${lan.index}" : lan.index)
+      name              = try(lan.default_lan, false) ? try(each.value.native_range.interface_name, null) : lan.name
+      interface_index   = try(lan.default_lan, false) ? (can(tonumber(try(each.value.native_range.index, ""))) ? "INT_${each.value.native_range.index}" : try(each.value.native_range.index, "")) : (can(tonumber(lan.index)) ? "INT_${lan.index}" : lan.index)
       # For default_lan interfaces (native range), omit dest_type so socket module won't create the LAN interface
       # For regular interfaces, include dest_type so socket module will create the LAN interface
       # For LAG members, pass the dest_type so socket module can create LAG member resources
       dest_type         = try(lan.default_lan, false) ? null : lan.dest_type
-      subnet            = try(lan.default_lan, false) ? each.value.native_range.subnet : (
+      subnet            = try(lan.default_lan, false) ? try(each.value.native_range.subnet, null) : (
         # For regular LAN interfaces, find the subnet from the native range
         # First check if using CSV data (lookup by site name, not site ID)
         local.using_csv && contains(keys(local.site_network_ranges_data), each.value.name) ? (
@@ -470,7 +470,7 @@ module "socket-site" {
           )
         )
       )
-      local_ip          = try(lan.default_lan, false) ? each.value.native_range.local_ip : (
+      local_ip          = try(lan.default_lan, false) ? try(each.value.native_range.local_ip, null) : (
         # For regular LAN interfaces, find the local_ip from the native range
         # First check if using CSV data (lookup by site name, not site ID)
         local.using_csv && contains(keys(local.site_network_ranges_data), each.value.name) ? (
@@ -543,27 +543,27 @@ module "socket-site" {
   ]
   
   # Set native_network_range and local_ip directly from the native_range object in the JSON
-  native_network_range = each.value.native_range.subnet
-  local_ip = each.value.native_range.local_ip
+  native_network_range = try(each.value.native_range.subnet, null)
+  local_ip = try(each.value.native_range.local_ip, null)
   
   # Additional native_range fields from JSON
-  native_range_vlan = each.value.native_range.vlan != "" && each.value.native_range.vlan != null ? each.value.native_range.vlan : null
-  native_range_mdns_reflector = each.value.native_range.mdns_reflector
-  native_range_translated_subnet = each.value.native_range.translated_subnet != "" ? each.value.native_range.translated_subnet : null
-  
+  native_range_vlan = try(each.value.native_range.vlan, null) != "" && try(each.value.native_range.vlan, null) != null ? try(each.value.native_range.vlan, null) : null
+  native_range_mdns_reflector = try(each.value.native_range.mdns_reflector, false)
+  native_range_translated_subnet = try(each.value.native_range.translated_subnet, null) != "" && try(each.value.native_range.translated_subnet, null) != null ? try(each.value.native_range.translated_subnet, null) : null
+
   # DHCP settings from JSON (only set when there are meaningful values)
-  native_range_dhcp_settings = {
-    dhcp_type = each.value.native_range.dhcp_settings.dhcp_type != "" ? each.value.native_range.dhcp_settings.dhcp_type : "DHCP_DISABLED"
-    ip_range = each.value.native_range.dhcp_settings.ip_range != "" ? each.value.native_range.dhcp_settings.ip_range : null
-    relay_group_id = each.value.native_range.dhcp_settings.relay_group_id != "" ? each.value.native_range.dhcp_settings.relay_group_id : null
-    relay_group_name = each.value.native_range.dhcp_settings.relay_group_name != "" ? each.value.native_range.dhcp_settings.relay_group_name : null
-    dhcp_microsegmentation = each.value.native_range.dhcp_settings.dhcp_microsegmentation
-  }
-  
+  native_range_dhcp_settings = try(each.value.native_range.dhcp_settings, null) != null ? {
+    dhcp_type = try(each.value.native_range.dhcp_settings.dhcp_type, null) != "" && try(each.value.native_range.dhcp_settings.dhcp_type, null) != null ? try(each.value.native_range.dhcp_settings.dhcp_type, null) : "DHCP_DISABLED"
+    ip_range = try(each.value.native_range.dhcp_settings.ip_range, null) != "" && try(each.value.native_range.dhcp_settings.ip_range, null) != null ? try(each.value.native_range.dhcp_settings.ip_range, null) : null
+    relay_group_id = try(each.value.native_range.dhcp_settings.relay_group_id, null) != "" && try(each.value.native_range.dhcp_settings.relay_group_id, null) != null ? try(each.value.native_range.dhcp_settings.relay_group_id, null) : null
+    relay_group_name = try(each.value.native_range.dhcp_settings.relay_group_name, null) != "" && try(each.value.native_range.dhcp_settings.relay_group_name, null) != null ? try(each.value.native_range.dhcp_settings.relay_group_name, null) : null
+    dhcp_microsegmentation = try(each.value.native_range.dhcp_settings.dhcp_microsegmentation, false)
+  } : null
+
   # Native range interface configuration
-  interface_dest_type = try(each.value.native_range.interface_dest_type, each.value.native_range.dest_type)
+  interface_dest_type = try(each.value.native_range.interface_dest_type, try(each.value.native_range.dest_type, null))
   lag_min_links = try(each.value.native_range.lag_min_links, null) != null && try(trimspace(each.value.native_range.lag_min_links), "") != "" ? try(tonumber(each.value.native_range.lag_min_links), null) : null
-  interface_name = each.value.native_range.interface_name
+  interface_name = try(each.value.native_range.interface_name, null)
   
   # Network ranges for the default/native LAN interface
   # Extract from default_lan interfaces that have network ranges
