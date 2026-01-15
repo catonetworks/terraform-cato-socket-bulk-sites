@@ -527,8 +527,9 @@ module "socket-site" {
           # Extract flat dhcp fields from nested dhcp_settings object (CSV loading creates nested object)
           dhcp_type              = try(nr.dhcp_settings.dhcp_type, null)
           dhcp_ip_range          = try(nr.dhcp_settings.ip_range, null)
-          dhcp_relay_group_id    = try(nr.dhcp_settings.relay_group_id, null)
-          dhcp_relay_group_name  = try(nr.dhcp_settings.relay_group_name, null)
+          # Only include relay fields when dhcp_type is DHCP_RELAY
+          dhcp_relay_group_id    = try(nr.dhcp_settings.dhcp_type, "") == "DHCP_RELAY" ? try(nr.dhcp_settings.relay_group_id, null) : null
+          dhcp_relay_group_name  = try(nr.dhcp_settings.dhcp_type, "") == "DHCP_RELAY" ? try(nr.dhcp_settings.relay_group_name, null) : null
           dhcp_microsegmentation = try(nr.dhcp_settings.dhcp_microsegmentation, null)
           native_range           = try(nr.native_range, false)  # Pass through the native_range flag with safe access
         },
@@ -555,8 +556,9 @@ module "socket-site" {
   native_range_dhcp_settings = try(each.value.native_range.dhcp_settings, null) != null ? {
     dhcp_type = try(each.value.native_range.dhcp_settings.dhcp_type, null) != "" && try(each.value.native_range.dhcp_settings.dhcp_type, null) != null ? try(each.value.native_range.dhcp_settings.dhcp_type, null) : "DHCP_DISABLED"
     ip_range = try(each.value.native_range.dhcp_settings.ip_range, null) != "" && try(each.value.native_range.dhcp_settings.ip_range, null) != null ? try(each.value.native_range.dhcp_settings.ip_range, null) : null
-    relay_group_id = try(each.value.native_range.dhcp_settings.relay_group_id, null) != "" && try(each.value.native_range.dhcp_settings.relay_group_id, null) != null ? try(each.value.native_range.dhcp_settings.relay_group_id, null) : null
-    relay_group_name = try(each.value.native_range.dhcp_settings.relay_group_name, null) != "" && try(each.value.native_range.dhcp_settings.relay_group_name, null) != null ? try(each.value.native_range.dhcp_settings.relay_group_name, null) : null
+    # Only include relay fields when dhcp_type is DHCP_RELAY
+    relay_group_id = try(each.value.native_range.dhcp_settings.dhcp_type, "") == "DHCP_RELAY" && try(each.value.native_range.dhcp_settings.relay_group_id, null) != "" && try(each.value.native_range.dhcp_settings.relay_group_id, null) != null ? try(each.value.native_range.dhcp_settings.relay_group_id, null) : null
+    relay_group_name = try(each.value.native_range.dhcp_settings.dhcp_type, "") == "DHCP_RELAY" && try(each.value.native_range.dhcp_settings.relay_group_name, null) != "" && try(each.value.native_range.dhcp_settings.relay_group_name, null) != null ? try(each.value.native_range.dhcp_settings.relay_group_name, null) : null
     dhcp_microsegmentation = try(each.value.native_range.dhcp_settings.dhcp_microsegmentation, false)
   } : null
 
@@ -580,8 +582,14 @@ module "socket-site" {
         translated_subnet      = try(trimspace(nr.translated_subnet), "") != "" ? nr.translated_subnet : null
         internet_only          = false
         mdns_reflector         = nr.mdns_reflector
-        # Pass through dhcp_settings object from CSV (already constructed during CSV loading)
-        dhcp_settings          = try(nr.dhcp_settings, null)
+        # Transform dhcp_settings to only include relay fields when dhcp_type is DHCP_RELAY
+        dhcp_settings          = try(nr.dhcp_settings, null) != null ? {
+          dhcp_type = try(nr.dhcp_settings.dhcp_type, null)
+          ip_range = try(nr.dhcp_settings.ip_range, null)
+          relay_group_id = try(nr.dhcp_settings.dhcp_type, "") == "DHCP_RELAY" ? try(nr.dhcp_settings.relay_group_id, null) : null
+          relay_group_name = try(nr.dhcp_settings.dhcp_type, "") == "DHCP_RELAY" ? try(nr.dhcp_settings.relay_group_name, null) : null
+          dhcp_microsegmentation = try(nr.dhcp_settings.dhcp_microsegmentation, false)
+        } : null
         # Include interface_index from the CSV row for default interfaces
         interface_index        = try(nr.lan_interface_index, try(each.value.native_range.index, ""))
       } if try(nr.native_range, false) == false # Exclude native ranges
