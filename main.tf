@@ -377,12 +377,12 @@ locals {
 }
 
 module "socket-site" {
-  # Use ID if available (for imports), otherwise use site name
+  # Index by site name for readability in state
   for_each = { for site in local.sites_data :
-    try(site.id, null) != null && try(site.id, null) != "" ? site.id : site.name => site
+    site.name => site
   }
-  source   = "catonetworks/socket/cato"
-  # source   = "../terraform-cato-socket"
+  # source   = "catonetworks/socket/cato"
+  source   = "../terraform-cato-socket"
   
   # Basic site information
   site_name        = each.value.name
