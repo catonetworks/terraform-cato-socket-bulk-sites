@@ -28,3 +28,6 @@
 
 ## 0.0.8 (2026-01-15)
 - Updated json logic to reflect csv logic to properly detect and ignore changes in source data, and  align to new export format to index resources by id and handle empty values
+
+## 0.0.9 (2026-01-16)
+- Reverted indexing back to using names to accommodate new creation of records and impoorts of existing sites into terraform
