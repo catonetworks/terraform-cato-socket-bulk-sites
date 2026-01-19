@@ -300,9 +300,11 @@ locals {
           )
         ],
         # Default interfaces with network ranges (those without explicit lan_interface_id but with network ranges)
-        # Check if there are any network ranges for default interfaces
-        length([
-          for nr in local.site_network_ranges_data[site_name] : nr 
+        # For CSV input, always create a default LAN interface even if network_ranges CSV is empty
+        # This matches the JSON behavior where sites can have default LAN interfaces with empty network_ranges
+        # Check if: 1) we have site data from CSV, OR 2) there are actual network ranges for default interface
+        (local.using_csv && contains(keys(local.site_network_ranges_data), site_name)) || length([
+          for nr in try(local.site_network_ranges_data[site_name], []) : nr
           if (
             try(trimspace(nr.lan_interface_id), "") == "" &&
             try(nr.subnet, "") != "" &&  # Only require subnet for default interface ranges

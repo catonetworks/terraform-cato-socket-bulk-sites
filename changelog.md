@@ -31,3 +31,6 @@
 
 ## 0.0.9 (2026-01-16)
 - Reverted indexing back to using names to accommodate new creation of records and impoorts of existing sites into terraform
+
+## 0.0.10 (2026-01-19)
+- Added logic to support network_range files with no network range entries

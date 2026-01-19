@@ -15,23 +15,23 @@
 #   value = [for site_name in keys(module.socket-site) : site_name]
 # }
 
-output "sites_by_type" {
-  description = "Sites grouped by their type"
-  value = {
-    for site_type in distinct([for site in local.sites_data : site.type]) : site_type => [
-      for site in local.sites_data : site.name if site.type == site_type
-    ]
-  }
-}
+# output "sites_by_type" {
+#   description = "Sites grouped by their type"
+#   value = {
+#     for site_type in distinct([for site in local.sites_data : site.type]) : site_type => [
+#       for site in local.sites_data : site.name if site.type == site_type
+#     ]
+#   }
+# }
 
-output "sites_by_connection_type" {
-  description = "Sites grouped by their connection type"
-  value = {
-    for connection_type in distinct([for site in local.sites_data : site.connection_type]) : connection_type => [
-      for site in local.sites_data : site.name if site.connection_type == connection_type
-    ]
-  }
-}
+# output "sites_by_connection_type" {
+#   description = "Sites grouped by their connection type"
+#   value = {
+#     for connection_type in distinct([for site in local.sites_data : site.connection_type]) : connection_type => [
+#       for site in local.sites_data : site.name if site.connection_type == connection_type
+#     ]
+#   }
+# }
 
 # # Site Details
 # output "site_details" {
@@ -82,27 +82,27 @@ output "sites_by_connection_type" {
 #   }
 # }
 
-# Location Information
-output "sites_by_location" {
-  description = "Sites grouped by location"
-  value = {
-    for country in distinct([for site in local.sites_data : site.site_location.countryCode]) : country => {
-      country_name = try([
-        for site in local.sites_data : site.site_location.countryName 
-        if site.site_location.countryCode == country
-      ][0], "")
-      sites = [
-        for site in local.sites_data : {
-          name = site.name
-          city = site.site_location.city
-          state_code = try(site.stateCode, "")
-          timezone = site.site_location.timezone
-        }
-        if site.site_location.countryCode == country
-      ]
-    }
-  }
-}
+# # Location Information
+# output "sites_by_location" {
+#   description = "Sites grouped by location"
+#   value = {
+#     for country in distinct([for site in local.sites_data : site.site_location.countryCode]) : country => {
+#       country_name = try([
+#         for site in local.sites_data : site.site_location.countryName 
+#         if site.site_location.countryCode == country
+#       ][0], "")
+#       sites = [
+#         for site in local.sites_data : {
+#           name = site.name
+#           city = site.site_location.city
+#           state_code = try(site.stateCode, "")
+#           timezone = site.site_location.timezone
+#         }
+#         if site.site_location.countryCode == country
+#       ]
+#     }
+#   }
+# }
 
 # # Configuration Summary
 # output "deployment_summary" {
@@ -158,11 +158,11 @@ output "sites_by_location" {
 #   value = local.calculate_local_ip
 # }
 
-# LAN Interface Index
-output "lan_interfaces_by_id" {
-  description = "LAN interfaces indexed by their ID as string values"
-  value = local.lan_interfaces_by_id
-}
+# # LAN Interface Index
+# output "lan_interfaces_by_id" {
+#   description = "LAN interfaces indexed by their ID as string values"
+#   value = local.lan_interfaces_by_id
+# }
 
 # Debug output removed - LAG member interfaces are now working correctly
 # output "debug_sites_data" {
