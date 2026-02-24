@@ -34,3 +34,6 @@
 
 ## 0.0.10 (2026-01-19)
 - Added logic to support network_range files with no network range entries
+
+## 0.0.11 (2026-02-23)
+- Updated module to support custom inteface_index for default lan for socket

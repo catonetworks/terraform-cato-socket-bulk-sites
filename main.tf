@@ -568,7 +568,8 @@ module "socket-site" {
   interface_dest_type = try(each.value.native_range.interface_dest_type, try(each.value.native_range.dest_type, null))
   lag_min_links = try(each.value.native_range.lag_min_links, null) != null && try(trimspace(each.value.native_range.lag_min_links), "") != "" ? try(tonumber(each.value.native_range.lag_min_links), null) : null
   interface_name = try(each.value.native_range.interface_name, null)
-  
+  interface_index = try(each.value.native_range.index, null) != null && try(trimspace(each.value.native_range.index), "") != "" ? (can(tonumber(each.value.native_range.index)) ? "INT_${each.value.native_range.index}" : each.value.native_range.index) : null
+
   # Network ranges for the default/native LAN interface
   # Extract from default_lan interfaces that have network ranges
   default_interface_network_ranges = flatten([
