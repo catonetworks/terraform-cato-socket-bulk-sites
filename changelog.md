@@ -37,3 +37,6 @@
 
 ## 0.0.11 (2026-02-23)
 - Updated module to support custom inteface_index for default lan for socket
+
+## 0.0.12 (2026-03-26)
+- Added outputs

@@ -2,6 +2,31 @@
 # SOCKET SITES MODULE OUTPUTS
 # ===============================
 
+# Expose the socket-site module for testing
+output "socket_sites" {
+  description = "Map of all socket site resources by site name"
+  value = {
+    for site_name, site_module in module.socket-site :
+    site_name => site_module.site
+  }
+}
+
+output "wan_interfaces" {
+  description = "Map of WAN interfaces by site name"
+  value = {
+    for site_name, site_module in module.socket-site :
+    site_name => site_module.wan_interfaces
+  }
+}
+
+output "network_ranges" {
+  description = "Map of network ranges by site name"
+  value = {
+    for site_name, site_module in module.socket-site :
+    site_name => site_module.default_interface_network_ranges
+  }
+}
+
 # Basic Site Information
 # output "site_ids" {
 #   description = "Map of site names to their IDs"
