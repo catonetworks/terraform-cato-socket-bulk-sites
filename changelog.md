@@ -40,3 +40,6 @@
 
 ## 0.0.12 (2026-03-26)
 - Added outputs
+
+## 0.0.13 (2026-04-14)
+- Fixed processing ranges for direct and routed to ignore dhcp

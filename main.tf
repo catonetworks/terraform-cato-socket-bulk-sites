@@ -4,10 +4,10 @@ locals {
   using_csv = var.sites_csv_file_path != null && var.sites_csv_file_path != ""
   
   # Validation - ensure exactly one input method is used
-  input_validation = local.using_json && local.using_csv ? (
-    regex("Error: Cannot use both JSON and CSV inputs simultaneously. Please specify either sites_json_file_path OR sites_csv_file_path, not both.", "")
-  ) : (!local.using_json && !local.using_csv ? (
-    regex("Error: Must specify either sites_json_file_path or sites_csv_file_path.", "")
+  input_validation = local.using_json && local.using_csv ? file(
+    "VALIDATION_ERROR: Cannot use both JSON and CSV inputs simultaneously. Please specify either sites_json_file_path OR sites_csv_file_path, not both."
+  ) : (!local.using_json && !local.using_csv ? file(
+    "VALIDATION_ERROR: Must specify either sites_json_file_path or sites_csv_file_path."
   ) : "valid")
   
   # JSON data processing - use try() to handle type consistency
@@ -62,10 +62,9 @@ locals {
     ]
   ])
 
-  # Use regex to force an error if there are validation issues
-  routed_validation_check = length(local.routed_dhcp_validation_errors) > 0 ? regex(
-    "ValidationError", 
-    join("\n", concat(["VALIDATION ERROR:"], local.routed_dhcp_validation_errors, ["Please fix these configuration errors before proceeding."]))
+  # Force a validation error by trying to read a non-existent file with error message as the path
+  routed_validation_check = length(local.routed_dhcp_validation_errors) > 0 ? file(
+    "VALIDATION_ERROR_Routed_DHCP: ${join(" || ", local.routed_dhcp_validation_errors)}"
   ) : "validation_passed"
   
   # Validation for relay group configuration - cannot have both ID and name
@@ -90,9 +89,9 @@ locals {
   
   all_relay_group_errors = concat(local.relay_group_validation_errors, local.relay_group_validation_errors_native)
   
-  relay_validation_check = length(local.all_relay_group_errors) > 0 ? regex(
-    "ValidationError", 
-    join("\n", concat(["VALIDATION ERROR:"], local.all_relay_group_errors, ["Please fix these configuration errors before proceeding."]))
+  # Force a validation error by trying to read a non-existent file with error message as the path
+  relay_validation_check = length(local.all_relay_group_errors) > 0 ? file(
+    "VALIDATION_ERROR_Relay_Group_Config_(cannot_have_both_id_AND_name): ${join(" || ", local.all_relay_group_errors)}"
   ) : "validation_passed"
   
   csv_sites_data = try(local.using_csv ? [
@@ -141,13 +140,16 @@ locals {
         mdns_reflector = try(lower(trimspace(site_rows[0].native_range_mdns_reflector)), "false") == "true"
         interface_dest_type = try(trimspace(site_rows[0].native_range_interface_dest_type), null)
         lag_min_links = try(tonumber(trimspace(site_rows[0].native_range_interface_lag_min_links)), null)
-        dhcp_settings = {
-          dhcp_type = try(trimspace(site_rows[0].native_range_dhcp_type), "DHCP_DISABLED")
+        # Only populate dhcp_settings for DHCP_RANGE or DHCP_RELAY types
+        # For DHCP_DISABLED, ACCOUNT_DEFAULT, or empty, set dhcp_settings to null
+        # This prevents drift with the provider which returns null for these default types
+        dhcp_settings = contains(["DHCP_RANGE", "DHCP_RELAY"], try(trimspace(site_rows[0].native_range_dhcp_type), "")) ? {
+          dhcp_type = try(trimspace(site_rows[0].native_range_dhcp_type), null)
           ip_range = try(trimspace(site_rows[0].native_range_dhcp_ip_range), null) != "" ? try(trimspace(site_rows[0].native_range_dhcp_ip_range), null) : null
-          relay_group_id = try(trimspace(site_rows[0].native_range_dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(site_rows[0].native_range_dhcp_relay_group_id), "") != "" ? try(trimspace(site_rows[0].native_range_dhcp_relay_group_id), null) : null
-          relay_group_name = try(trimspace(site_rows[0].native_range_dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(site_rows[0].native_range_dhcp_relay_group_name), "") != "" ? try(trimspace(site_rows[0].native_range_dhcp_relay_group_name), null) : null
-          dhcp_microsegmentation = try(lower(trimspace(site_rows[0].native_range_dhcp_microsegmentation)), "false") == "true"
-        }
+          relay_group_id = try(trimspace(site_rows[0].native_range_dhcp_type), "") == "DHCP_RELAY" && try(trimspace(site_rows[0].native_range_dhcp_relay_group_id), "") != "" ? try(trimspace(site_rows[0].native_range_dhcp_relay_group_id), null) : null
+          relay_group_name = try(trimspace(site_rows[0].native_range_dhcp_type), "") == "DHCP_RELAY" && try(trimspace(site_rows[0].native_range_dhcp_relay_group_name), "") != "" ? try(trimspace(site_rows[0].native_range_dhcp_relay_group_name), null) : null
+          dhcp_microsegmentation = try(lower(trimspace(site_rows[0].native_range_dhcp_microsegmentation)), "") == "true" ? true : null
+        } : null
       }
       
       # Process LAN interfaces from network ranges CSV data
@@ -182,13 +184,15 @@ locals {
                   translated_subnet = try(trimspace(nr.translated_subnet), "") != "" ? try(trimspace(nr.translated_subnet), null) : null
                   local_ip = try(nr.local_ip, null)
                   native_range = try(lower(trimspace(nr.is_native_range)), "false") == "true"
-                  dhcp_settings = {
+                  # Only populate dhcp_settings for non-Routed/Direct ranges
+                  # Routed/Direct ranges cannot have DHCP settings submitted to API
+                  dhcp_settings = !contains(["Routed", "Direct"], try(nr.range_type, "Direct")) ? {
                     dhcp_type = try(trimspace(nr.dhcp_type), "DHCP_DISABLED")
                     ip_range = try(trimspace(nr.dhcp_ip_range), null) != "" ? try(trimspace(nr.dhcp_ip_range), null) : null
                     relay_group_id = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_id), "") != "" ? try(trimspace(nr.dhcp_relay_group_id), null) : null
                     relay_group_name = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_name), "") != "" ? try(trimspace(nr.dhcp_relay_group_name), null) : null
                     dhcp_microsegmentation = try(lower(trimspace(nr.dhcp_microsegmentation)), "false") == "true"
-                  }
+                  } : null
                 } if (
                   try(nr.subnet, "") != "" &&  # Only include rows with actual network range data (subnet is required)
                   try(lower(trimspace(nr.is_native_range)), "false") != "true"  # Exclude native ranges
@@ -207,13 +211,15 @@ locals {
                   translated_subnet = try(trimspace(nr.translated_subnet), "") != "" ? try(trimspace(nr.translated_subnet), null) : null
                   local_ip = try(nr.local_ip, null)
                   native_range = try(lower(trimspace(nr.is_native_range)), "false") == "true"
-                  dhcp_settings = {
+                  # Only populate dhcp_settings for non-Routed/Direct ranges
+                  # Routed/Direct ranges cannot have DHCP settings submitted to API
+                  dhcp_settings = !contains(["Routed", "Direct"], try(nr.range_type, "Direct")) ? {
                     dhcp_type = try(trimspace(nr.dhcp_type), "DHCP_DISABLED")
                     ip_range = try(trimspace(nr.dhcp_ip_range), null) != "" ? try(trimspace(nr.dhcp_ip_range), null) : null
                     relay_group_id = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_id), "") != "" ? try(trimspace(nr.dhcp_relay_group_id), null) : null
                     relay_group_name = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_name), "") != "" ? try(trimspace(nr.dhcp_relay_group_name), null) : null
                     dhcp_microsegmentation = try(lower(trimspace(nr.dhcp_microsegmentation)), "false") == "true"
-                  }
+                  } : null
                 } if (
                   try(trimspace(nr.lan_interface_id), "") == "" &&  # No explicit lan_interface_id
                   try(nr.subnet, "") != "" &&  # Valid network range data (subnet is required)
@@ -278,13 +284,15 @@ locals {
                 translated_subnet = try(trimspace(nr.translated_subnet), "") != "" ? try(trimspace(nr.translated_subnet), null) : null
                 local_ip = try(nr.local_ip, null)
                 native_range = try(lower(trimspace(nr.is_native_range)), "false") == "true"
-                dhcp_settings = {
+                # Only populate dhcp_settings for non-Routed/Direct ranges
+                # Routed/Direct ranges cannot have DHCP settings submitted to API
+                dhcp_settings = !contains(["Routed", "Direct"], try(nr.range_type, "Direct")) ? {
                   dhcp_type = try(trimspace(nr.dhcp_type), "DHCP_DISABLED")
                   ip_range = try(trimspace(nr.dhcp_ip_range), null) != "" ? try(trimspace(nr.dhcp_ip_range), null) : null
                   relay_group_id = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_id), "") != "" ? try(trimspace(nr.dhcp_relay_group_id), null) : null
                   relay_group_name = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_name), "") != "" ? try(trimspace(nr.dhcp_relay_group_name), null) : null
                   dhcp_microsegmentation = try(lower(trimspace(nr.dhcp_microsegmentation)), "false") == "true"
-                }
+                } : null
               } if (
                 try(nr.subnet, "") != "" &&  # Only include rows with actual network range data (subnet is required)
                 try(lower(trimspace(nr.is_native_range)), "false") != "true"  # Exclude native ranges
@@ -329,13 +337,15 @@ locals {
               translated_subnet = try(trimspace(nr.translated_subnet), "") != "" ? try(trimspace(nr.translated_subnet), null) : null
               local_ip = try(nr.local_ip, null)
               native_range = try(lower(trimspace(nr.is_native_range)), "false") == "true"
-              dhcp_settings = {
+              # Only populate dhcp_settings for non-Routed/Direct ranges
+              # Routed/Direct ranges cannot have DHCP settings submitted to API
+              dhcp_settings = !contains(["Routed", "Direct"], try(nr.range_type, "Direct")) ? {
                 dhcp_type = try(trimspace(nr.dhcp_type), "DHCP_DISABLED")
                 ip_range = try(trimspace(nr.dhcp_ip_range), null) != "" ? try(trimspace(nr.dhcp_ip_range), null) : null
                 relay_group_id = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_id), "") != "" ? try(trimspace(nr.dhcp_relay_group_id), null) : null
                 relay_group_name = try(trimspace(nr.dhcp_type), "DHCP_DISABLED") == "DHCP_RELAY" && try(trimspace(nr.dhcp_relay_group_name), "") != "" ? try(trimspace(nr.dhcp_relay_group_name), null) : null
                 dhcp_microsegmentation = try(lower(trimspace(nr.dhcp_microsegmentation)), "false") == "true"
-              }
+              } : null
             } if (
               try(trimspace(nr.lan_interface_id), "") == "" &&
               try(nr.subnet, "") != "" &&  # Only require subnet for default interface ranges

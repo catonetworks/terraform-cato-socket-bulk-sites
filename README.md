@@ -101,9 +101,10 @@ terraform {
   required_providers {
     cato = {
       source = "catonetworks/cato"
-      version = "0.0.46"
+      version = ">= 0.0.70"
     }
   }
+  required_version = ">= 0.13"
 }
 
 provider "cato" {
@@ -138,6 +139,9 @@ The module includes a sample JSON file to help you get started:
 ## Brownfield Deployments
 
 This module is particularly valuable for brownfield deployments where you need to bring existing Cato Networks infrastructure under Terraform management. The workflow for managing existing sites:
+
+### IMPORTANT NOTE
+Upgrade the latest version of the catocli using `pip3 install --upgrade catocli`
 
 1. **Export your current configuration** from the Cato Management Application to CSV or JSON using the `catocli export` command.
 
@@ -367,8 +371,8 @@ catocli -h
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.13 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.47 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.70 |
 
 ## Providers
 
@@ -396,8 +400,7 @@ No resources.
 
 | Name | Description |
 |------|-------------|
-| <a name="output_lan_interfaces_by_id"></a> [lan\_interfaces\_by\_id](#output\_lan\_interfaces\_by\_id) | LAN interfaces indexed by their ID as string values |
-| <a name="output_sites_by_connection_type"></a> [sites\_by\_connection\_type](#output\_sites\_by\_connection\_type) | Sites grouped by their connection type |
-| <a name="output_sites_by_location"></a> [sites\_by\_location](#output\_sites\_by\_location) | Sites grouped by location |
-| <a name="output_sites_by_type"></a> [sites\_by\_type](#output\_sites\_by\_type) | Sites grouped by their type |
+| <a name="output_network_ranges"></a> [network\_ranges](#output\_network\_ranges) | Map of network ranges by site name |
+| <a name="output_socket_sites"></a> [socket\_sites](#output\_socket\_sites) | Map of all socket site resources by site name |
+| <a name="output_wan_interfaces"></a> [wan\_interfaces](#output\_wan\_interfaces) | Map of WAN interfaces by site name |
 <!-- END_TF_DOCS -->
