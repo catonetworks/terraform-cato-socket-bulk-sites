@@ -104,7 +104,7 @@ terraform {
       version = ">= 0.0.70"
     }
   }
-  required_version = ">= 0.13"
+  required_version = ">= 1.5"
 }
 
 provider "cato" {
@@ -370,8 +370,8 @@ catocli -h
 ## Requirements
 
 | Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
+| ---- | ------- |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
 | <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.70 |
 
 ## Providers
@@ -381,7 +381,7 @@ No providers.
 ## Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | <a name="module_socket-site"></a> [socket-site](#module\_socket-site) | catonetworks/socket/cato | n/a |
 
 ## Resources
@@ -391,7 +391,7 @@ No resources.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_sites_csv_file_path"></a> [sites\_csv\_file\_path](#input\_sites\_csv\_file\_path) | Path to the main CSV file containing the site configuration data. Either this or sites\_json\_file\_path must be provided. | `string` | `null` | no |
 | <a name="input_sites_csv_network_ranges_folder_path"></a> [sites\_csv\_network\_ranges\_folder\_path](#input\_sites\_csv\_network\_ranges\_folder\_path) | Path to the folder containing individual CSV files with network ranges data for each site. Optional when using CSV input. Files should be named {site\_name}\_network\_ranges.csv by default, or you can specify a custom filename in the network\_ranges\_csv\_filename column of socket\_sites.csv | `string` | `null` | no |
 | <a name="input_sites_json_file_path"></a> [sites\_json\_file\_path](#input\_sites\_json\_file\_path) | Path to the JSON file containing the site configuration data. Either this or sites\_csv\_file\_path must be provided. | `string` | `null` | no |
@@ -399,7 +399,7 @@ No resources.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_network_ranges"></a> [network\_ranges](#output\_network\_ranges) | Map of network ranges by site name |
 | <a name="output_socket_sites"></a> [socket\_sites](#output\_socket\_sites) | Map of all socket site resources by site name |
 | <a name="output_wan_interfaces"></a> [wan\_interfaces](#output\_wan\_interfaces) | Map of WAN interfaces by site name |
