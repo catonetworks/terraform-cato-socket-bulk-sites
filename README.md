@@ -68,7 +68,7 @@ terraform {
   required_providers {
     cato = {
       source = "catonetworks/cato"
-      version = "0.0.46"
+      version = ">= 0.0.73"
     }
   }
 }
@@ -101,7 +101,7 @@ terraform {
   required_providers {
     cato = {
       source = "catonetworks/cato"
-      version = ">= 0.0.70"
+      version = ">= 0.0.73"
     }
   }
   required_version = ">= 1.5"
@@ -362,7 +362,7 @@ catocli -h
 
 | Module Version | Terraform | Cato Provider | CatoCLI |
 |----------------|-----------|---------------|----------|
-| 0.1.0+         | >= 1.5.0  | >= 0.0.43     | >= 3.0.2 |
+| 0.1.0+         | >= 1.5.0  | >= 0.0.73     | >= 3.0.2 |
 
 ---
 
@@ -372,7 +372,7 @@ catocli -h
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.70 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.73 |
 
 ## Providers
 
