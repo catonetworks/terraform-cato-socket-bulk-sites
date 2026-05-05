@@ -182,6 +182,7 @@ locals {
                   gateway = try(nr.gateway, null)
                   range_type = try(nr.range_type, "Direct")
                   translated_subnet = try(trimspace(nr.translated_subnet), "") != "" ? try(trimspace(nr.translated_subnet), null) : null
+                  internet_only = contains(["true", "false"], try(lower(trimspace(tostring(nr.internet_only))), "")) ? lower(trimspace(tostring(nr.internet_only))) == "true" : null
                   local_ip = try(nr.local_ip, null)
                   native_range = try(lower(trimspace(nr.is_native_range)), "false") == "true"
                   # Only populate dhcp_settings for non-Routed/Direct ranges
@@ -209,6 +210,7 @@ locals {
                   gateway = try(nr.gateway, null)
                   range_type = try(nr.range_type, "Direct")
                   translated_subnet = try(trimspace(nr.translated_subnet), "") != "" ? try(trimspace(nr.translated_subnet), null) : null
+                  internet_only = contains(["true", "false"], try(lower(trimspace(tostring(nr.internet_only))), "")) ? lower(trimspace(tostring(nr.internet_only))) == "true" : null
                   local_ip = try(nr.local_ip, null)
                   native_range = try(lower(trimspace(nr.is_native_range)), "false") == "true"
                   # Only populate dhcp_settings for non-Routed/Direct ranges
@@ -282,6 +284,7 @@ locals {
                 gateway = try(nr.gateway, null)
                 range_type = try(nr.range_type, "Direct")
                 translated_subnet = try(trimspace(nr.translated_subnet), "") != "" ? try(trimspace(nr.translated_subnet), null) : null
+                internet_only = contains(["true", "false"], try(lower(trimspace(tostring(nr.internet_only))), "")) ? lower(trimspace(tostring(nr.internet_only))) == "true" : null
                 local_ip = try(nr.local_ip, null)
                 native_range = try(lower(trimspace(nr.is_native_range)), "false") == "true"
                 # Only populate dhcp_settings for non-Routed/Direct ranges
@@ -335,6 +338,7 @@ locals {
               gateway = try(nr.gateway, null)
               range_type = try(nr.range_type, "Direct")
               translated_subnet = try(trimspace(nr.translated_subnet), "") != "" ? try(trimspace(nr.translated_subnet), null) : null
+              internet_only = contains(["true", "false"], try(lower(trimspace(tostring(nr.internet_only))), "")) ? lower(trimspace(tostring(nr.internet_only))) == "true" : null
               local_ip = try(nr.local_ip, null)
               native_range = try(lower(trimspace(nr.is_native_range)), "false") == "true"
               # Only populate dhcp_settings for non-Routed/Direct ranges
@@ -536,6 +540,7 @@ module "socket-site" {
           gateway                = nr.gateway
           vlan                   = nr.vlan != "" && nr.vlan != null ? tonumber(nr.vlan) : null
           translated_subnet      = try(trimspace(nr.translated_subnet), "") != "" ? nr.translated_subnet : null
+          internet_only          = try(nr.internet_only, null)
           # Extract flat dhcp fields from nested dhcp_settings object (CSV loading creates nested object)
           dhcp_type              = try(nr.dhcp_settings.dhcp_type, null)
           dhcp_ip_range          = try(nr.dhcp_settings.ip_range, null)
@@ -593,7 +598,7 @@ module "socket-site" {
         gateway                = nr.gateway
         vlan                   = nr.vlan != "" && nr.vlan != null ? tonumber(nr.vlan) : null
         translated_subnet      = try(trimspace(nr.translated_subnet), "") != "" ? nr.translated_subnet : null
-        internet_only          = false
+        internet_only          = try(nr.internet_only, null)
         mdns_reflector         = nr.mdns_reflector
         # Transform dhcp_settings to only include relay fields when dhcp_type is DHCP_RELAY
         dhcp_settings          = try(nr.dhcp_settings, null) != null ? {
