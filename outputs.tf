@@ -27,6 +27,16 @@ output "network_ranges" {
   }
 }
 
+output "wifi_ssids" {
+  description = "Map of \"<site name>:<ssid name>\" to the created cato_wifi_ssid resource ID"
+  value = merge([
+    for site_name, site_module in module.socket-site : {
+      for ssid_name, ssid_id in site_module.wifi_ssids :
+      "${site_name}:${ssid_name}" => ssid_id
+    }
+  ]...)
+}
+
 # Basic Site Information
 # output "site_ids" {
 #   description = "Map of site names to their IDs"

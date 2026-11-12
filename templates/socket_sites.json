@@ -410,6 +410,30 @@
                     "dhcp_microsegmentation": false
                 }
             },
+            "wifi_ssids": [
+                {
+                    "id": "V2lmaVNzaWQ6MTIz",
+                    "name": "Guest Wi-Fi",
+                    "network_interface_id": "WBR1",
+                    "band": "BOTH",
+                    "category": "GUEST",
+                    "enabled": true,
+                    "visible": true,
+                    "internet_only": false,
+                    "subnet": "10.30.50.0/24",
+                    "local_ip": "10.30.50.1",
+                    "mdns_enabled": false,
+                    "microsegmentation_enabled": false,
+                    "dhcp": {
+                        "dhcp_subnet": "10.30.50.128/25"
+                    },
+                    "security": {
+                        "mode": "PSK",
+                        "auth_protocol": "WPA3",
+                        "track_authentication": false
+                    }
+                }
+            ],
             "id": "155685",
             "name": "Test",
             "description": "",
