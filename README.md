@@ -94,6 +94,8 @@ Unlike the policy/rules bulk modules, this module's JSON root is **flat** - ther
 
 #### Key Fields: Wi-Fi SSIDs (`sites[].wifi_ssids[]`)
 
+> **Not active yet.** No published `catonetworks/socket/cato` version (0.0.14 is the latest) accepts Wi-Fi SSIDs, so this module doesn't pass `wifi_ssids` or `wifi_ssid_passkeys` down and creates no `cato_wifi_ssid` resources. They're read and ignored until that Socket release.
+
 Each site entry may include an optional `wifi_ssids` array. Each entry becomes one `cato_wifi_ssid` resource on that site, keyed by SSID `name`, and is passed through to the child module unchanged.
 
 - `id` - present in `catocli` export output; ignored on input (Terraform manages the resource ID via state)

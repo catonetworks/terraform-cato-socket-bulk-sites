@@ -409,8 +409,10 @@ module "socket-site" {
   for_each = { for site in local.sites_data :
     site.name => site
   }
-  # source  = "catonetworks/socket/cato"   # restore (with bumped version) before publishing
-  source = "../terraform-cato-socket"
+  # The published Socket module. A sibling path ("../terraform-cato-socket") can't be reached once this
+  # module is downloaded from the registry or git, so 0.0.15 stopped at `terraform init` for every caller.
+  source  = "catonetworks/socket/cato"
+  version = "0.0.14"
 
   # Basic site information
   site_name        = each.value.name
@@ -630,11 +632,11 @@ module "socket-site" {
   license_id = try(each.value.license_id, null)
   license_bw = try(each.value.license_bw, null)
 
-  # Wi-Fi SSIDs - passed through as-is; PSK passkeys are split per-site from
-  # wifi_ssid_passkeys (keyed "<site name>:<ssid name>") into a map keyed by
-  # ssid name only, which is what the child module expects.
-  wifi_ssids         = try(each.value.wifi_ssids, [])
-  wifi_ssid_passkeys = try(local.wifi_ssid_passkeys_by_site[each.value.name], {})
+  # Wi-Fi SSIDs (sites[].wifi_ssids[] and var.wifi_ssid_passkeys) are not passed down yet: no published
+  # catonetworks/socket/cato version (0.0.14 is the latest) has wifi_ssids or wifi_ssid_passkeys inputs, and
+  # passing them stops `terraform init`. With the Socket release that adds them, pass them again:
+  #   wifi_ssids         = try(each.value.wifi_ssids, [])
+  #   wifi_ssid_passkeys = try(local.wifi_ssid_passkeys_by_site[each.value.name], {})
 }
 
 # Safety guard: fail `terraform plan` early if the merged sites data (JSON + CSV)

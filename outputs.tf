@@ -28,13 +28,15 @@ output "network_ranges" {
 }
 
 output "wifi_ssids" {
-  description = "Map of \"<site name>:<ssid name>\" to the created cato_wifi_ssid resource ID"
-  value = merge([
-    for site_name, site_module in module.socket-site : {
-      for ssid_name, ssid_id in site_module.wifi_ssids :
-      "${site_name}:${ssid_name}" => ssid_id
-    }
-  ]...)
+  description = "Map of \"<site name>:<ssid name>\" to the created cato_wifi_ssid resource ID. Empty until a published Socket module creates Wi-Fi SSIDs (see the note on module \"socket-site\" in main.tf)."
+  # With that Socket release:
+  # value = merge([
+  #   for site_name, site_module in module.socket-site : {
+  #     for ssid_name, ssid_id in site_module.wifi_ssids :
+  #     "${site_name}:${ssid_name}" => ssid_id
+  #   }
+  # ]...)
+  value = {}
 }
 
 # Basic Site Information

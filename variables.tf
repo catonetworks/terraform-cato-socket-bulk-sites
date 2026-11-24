@@ -25,7 +25,7 @@ variable "sites_csv_network_ranges_folder_path" {
 }
 
 variable "wifi_ssid_passkeys" {
-  description = "PSK passkeys for Wi-Fi SSIDs defined in sites[].wifi_ssids[] whose security.mode is \"PSK\", keyed by \"<site name>:<ssid name>\" (e.g. \"Branch 1:Guest Wi-Fi\"). The Cato API never returns the passkey, so it cannot be recovered on brownfield import or refresh. Each site's entries are split out and passed to its child module keyed by ssid name only."
+  description = "PSK passkeys for Wi-Fi SSIDs defined in sites[].wifi_ssids[] whose security.mode is \"PSK\", keyed by \"<site name>:<ssid name>\" (e.g. \"Branch 1:Guest Wi-Fi\"). The Cato API never returns the passkey, so it cannot be recovered on brownfield import or refresh. Each site's entries are split out and passed to its child module keyed by ssid name only. Not passed down yet: no published catonetworks/socket/cato version accepts Wi-Fi SSIDs."
   type        = map(string)
   default     = {}
   sensitive   = true
