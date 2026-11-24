@@ -47,6 +47,9 @@
 ## 0.0.14 (2026-05-05)
 - Added `internet_only` support for network ranges.
 
+## Unreleased
+- Fix: 0.0.15 can't be initialised by any caller. The nested Socket module pointed at a sibling folder (`../terraform-cato-socket`), which isn't there once this module is downloaded from the registry or git, and it was passed `wifi_ssids` and `wifi_ssid_passkeys`, which no published `catonetworks/socket/cato` version accepts. It's now `catonetworks/socket/cato` 0.0.14 again, and the Wi-Fi pass-through is paused (inputs still accepted, `wifi_ssids` output empty) until a Socket release supports it.
+
 ## 0.0.15 (2026-11-04)
 - Added per-site `sites[].wifi_ssids[]` passthrough to each site's `cato_wifi_ssid` resources, plus a sensitive `wifi_ssid_passkeys` map keyed `"<site name>:<ssid name>"`, split per-site and passed down to the child module keyed by SSID name.
 - Added `wifi_ssids` output (map of `"<site name>:<ssid name>"` to the created `cato_wifi_ssid` resource ID).
